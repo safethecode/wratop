@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Wratop Status Bar icon</title>
+  <mask id="frog-face">
+    <rect width="32" height="32" fill="black" />
+    <path
+      d="M2 30V15C2 8.8 6.1 4 11 4c2.3 0 4.1 1.3 5 3.1C16.9 5.3 18.7 4 21 4c4.9 0 9 4.8 9 11v15H2Z"
+      fill="white"
+    />
+    <ellipse cx="10.5" cy="12.5" rx="2.1" ry="3.1" fill="black" />
+    <ellipse cx="21.5" cy="12.5" rx="2.1" ry="3.1" fill="black" />
+    <path d="M10 21.5c3.8 2.6 8.2 2.6 12 0" fill="none" stroke="black" stroke-linecap="round" stroke-width="2.2" />
+  </mask>
+  <rect width="32" height="32" fill="black" mask="url(#frog-face)" />
+</svg>
