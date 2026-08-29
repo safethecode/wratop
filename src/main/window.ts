@@ -2,12 +2,14 @@ import { BrowserWindow } from 'electron';
 
 export function createMainWindow(): BrowserWindow {
   const window = new BrowserWindow({
-    backgroundColor: '#ffffff',
+    backgroundColor: '#18181b',
     height: 720,
     minHeight: 560,
     minWidth: 420,
     show: false,
     title: 'wratop',
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 16, y: 16 },
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

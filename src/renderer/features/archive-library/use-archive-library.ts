@@ -28,7 +28,7 @@ export interface ArchiveLibraryModel {
 }
 
 function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다';
+  return error instanceof Error ? error.message : 'Something went wrong';
 }
 
 function getTabIds(archive: TabArchive): readonly string[] {
@@ -73,7 +73,7 @@ export function useArchiveLibrary(refreshKey: number): ArchiveLibraryModel {
       const archive = await window.desktop.getArchive(archiveId);
 
       if (archive === null) {
-        setDetailState({ message: '보관함을 찾지 못했습니다', status: 'error' });
+        setDetailState({ message: 'Archive not found', status: 'error' });
         return;
       }
 
@@ -127,7 +127,9 @@ export function useArchiveLibrary(refreshKey: number): ArchiveLibraryModel {
         archiveId: detailState.archive.id,
         selectedTabIds: getTabIds(detailState.archive).filter((tabId) => selectedTabIds.has(tabId)),
       });
-      setFeedback(`${result.restoredTabCount}개 탭을 ${result.windowCount}개 창으로 복원했습니다`);
+      const tabs = `${result.restoredTabCount} ${result.restoredTabCount === 1 ? 'tab' : 'tabs'}`;
+      const windows = `${result.windowCount} ${result.windowCount === 1 ? 'window' : 'windows'}`;
+      setFeedback(`Restored ${tabs} in ${windows}`);
     } catch (error: unknown) {
       setFeedback(getErrorMessage(error));
     } finally {
@@ -140,7 +142,7 @@ export function useArchiveLibrary(refreshKey: number): ArchiveLibraryModel {
       return;
     }
 
-    if (!window.confirm(`“${detailState.archive.name}” 보관함을 삭제할까요?`)) {
+    if (!window.confirm(`Delete “${detailState.archive.name}”?`)) {
       return;
     }
 

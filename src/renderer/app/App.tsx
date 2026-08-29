@@ -8,6 +8,49 @@ import { tokens } from '../theme/tokens.stylex';
 
 type View = 'archives' | 'tabs';
 
+function CurrentTabsIcon(): React.JSX.Element {
+  return (
+    <svg
+      {...stylex.props(styles.navigationIcon)}
+      aria-hidden="true"
+      fill="none"
+      viewBox="0 0 20 20"
+    >
+      <rect height="11" rx="2" stroke="currentColor" strokeWidth="1.5" width="13" x="2.5" y="2.5" />
+      <path
+        d="M6 16.5h9.5a2 2 0 0 0 2-2V7"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
+function ArchivesIcon(): React.JSX.Element {
+  return (
+    <svg
+      {...stylex.props(styles.navigationIcon)}
+      aria-hidden="true"
+      fill="none"
+      viewBox="0 0 20 20"
+    >
+      <path
+        d="M3 6.5h14v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M2.5 3.75h15v3h-15zM7.5 10h5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
 export function App(): React.JSX.Element {
   const [archiveRefreshKey, setArchiveRefreshKey] = useState(0);
   const [hasVisitedArchives, setHasVisitedArchives] = useState(false);
@@ -35,12 +78,12 @@ export function App(): React.JSX.Element {
   const handleNavigationKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>): void => {
       switch (event.key) {
-        case 'ArrowLeft':
+        case 'ArrowUp':
         case 'Home':
           event.preventDefault();
           selectView('tabs');
           break;
-        case 'ArrowRight':
+        case 'ArrowDown':
         case 'End':
           event.preventDefault();
           selectView('archives');
@@ -52,10 +95,12 @@ export function App(): React.JSX.Element {
 
   return (
     <main {...stylex.props(styles.page)}>
-      <header {...stylex.props(styles.header)}>
+      <div className="titlebar-drag-region" aria-hidden="true" />
+      <aside {...stylex.props(styles.sidebar)} aria-label="Navigation">
         <div
           {...stylex.props(styles.navigation)}
-          aria-label="화면"
+          aria-label="Views"
+          aria-orientation="vertical"
           onKeyDown={handleNavigationKeyDown}
           role="tablist"
         >
@@ -73,7 +118,8 @@ export function App(): React.JSX.Element {
             tabIndex={view === 'tabs' ? 0 : -1}
             type="button"
           >
-            현재 탭
+            <CurrentTabsIcon />
+            Tabs
           </button>
           <button
             {...stylex.props(
@@ -89,28 +135,36 @@ export function App(): React.JSX.Element {
             tabIndex={view === 'archives' ? 0 : -1}
             type="button"
           >
-            보관함
+            <ArchivesIcon />
+            Archive
           </button>
         </div>
-      </header>
+      </aside>
 
-      <section
-        {...stylex.props(styles.content)}
-        aria-labelledby="tabs-tab"
-        hidden={view !== 'tabs'}
-        id="tabs-panel"
-        role="tabpanel"
-      >
-        <CurrentTabsPanel onArchiveCreated={handleArchiveCreated} />
-      </section>
-      <section
-        {...stylex.props(styles.content)}
-        aria-labelledby="archives-tab"
-        hidden={view !== 'archives'}
-        id="archives-panel"
-        role="tabpanel"
-      >
-        {hasVisitedArchives ? <ArchiveLibrary refreshKey={archiveRefreshKey} /> : null}
+      <section {...stylex.props(styles.workspace)}>
+        <header {...stylex.props(styles.workspaceHeader)}>
+          <h1 {...stylex.props(styles.workspaceTitle)}>{view === 'tabs' ? 'Tabs' : 'Archive'}</h1>
+        </header>
+        <div {...stylex.props(styles.content)}>
+          <section
+            {...stylex.props(styles.panel)}
+            aria-labelledby="tabs-tab"
+            hidden={view !== 'tabs'}
+            id="tabs-panel"
+            role="tabpanel"
+          >
+            <CurrentTabsPanel onArchiveCreated={handleArchiveCreated} />
+          </section>
+          <section
+            {...stylex.props(styles.panel)}
+            aria-labelledby="archives-tab"
+            hidden={view !== 'archives'}
+            id="archives-panel"
+            role="tabpanel"
+          >
+            {hasVisitedArchives ? <ArchiveLibrary refreshKey={archiveRefreshKey} /> : null}
+          </section>
+        </div>
       </section>
     </main>
   );
@@ -122,8 +176,85 @@ const styles = stylex.create({
     minHeight: 0,
     overflow: 'hidden',
   },
-  header: {
-    alignItems: 'flex-end',
+  navigation: {
+    alignItems: 'stretch',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+    width: '100%',
+  },
+  navigationButton: {
+    ':focus-visible': {
+      outlineColor: tokens.textPrimary,
+      outlineOffset: -3,
+    },
+    ':hover': {
+      backgroundColor: tokens.surfaceRaised,
+      color: tokens.textPrimary,
+    },
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    borderWidth: 0,
+    color: tokens.textMuted,
+    cursor: 'pointer',
+    display: 'flex',
+    fontSize: 14,
+    fontWeight: 600,
+    gap: 10,
+    minHeight: 44,
+    paddingBlock: 0,
+    paddingInline: 12,
+    textAlign: 'start',
+    width: '100%',
+  },
+  navigationButtonActive: {
+    ':hover': {
+      backgroundColor: tokens.accentStrong,
+    },
+    backgroundColor: tokens.accent,
+    color: tokens.textPrimary,
+  },
+  navigationIcon: {
+    flexShrink: 0,
+    height: 20,
+    width: 20,
+  },
+  page: {
+    backgroundColor: tokens.canvas,
+    display: 'grid',
+    gridTemplateColumns: {
+      default: '144px minmax(0, 1fr)',
+      '@media (max-width: 460px)': '128px minmax(0, 1fr)',
+    },
+    height: '100vh',
+    minHeight: 560,
+    minWidth: 420,
+    overflow: 'hidden',
+  },
+  panel: {
+    height: '100%',
+    minHeight: 0,
+  },
+  sidebar: {
+    backgroundColor: tokens.canvas,
+    borderInlineEndColor: tokens.line,
+    borderInlineEndStyle: 'solid',
+    borderInlineEndWidth: 1,
+    minWidth: 0,
+    paddingBlockEnd: 12,
+    paddingBlockStart: 52,
+    paddingInline: 10,
+  },
+  workspace: {
+    backgroundColor: tokens.surface,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    minWidth: 0,
+  },
+  workspaceHeader: {
+    alignItems: 'center',
     borderBlockEndColor: tokens.line,
     borderBlockEndStyle: 'solid',
     borderBlockEndWidth: 1,
@@ -132,41 +263,11 @@ const styles = stylex.create({
     height: 56,
     paddingInline: 20,
   },
-  navigation: {
-    alignItems: 'stretch',
-    display: 'flex',
-    gap: 24,
-    height: '100%',
-  },
-  navigationButton: {
-    ':focus-visible': {
-      outlineOffset: -3,
-    },
-    backgroundColor: 'transparent',
-    borderBlockEndColor: 'transparent',
-    borderBlockEndStyle: 'solid',
-    borderBlockEndWidth: 2,
-    borderInlineWidth: 0,
-    borderBlockStartWidth: 0,
-    color: tokens.textMuted,
-    cursor: 'pointer',
-    fontSize: 14,
-    fontWeight: 600,
-    minHeight: 44,
-    minWidth: 44,
-    padding: 0,
-  },
-  navigationButtonActive: {
-    borderBlockEndColor: tokens.accent,
+  workspaceTitle: {
     color: tokens.textPrimary,
-  },
-  page: {
-    backgroundColor: tokens.canvas,
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100vh',
-    minHeight: 560,
-    minWidth: 420,
-    overflow: 'hidden',
+    fontSize: 17,
+    fontWeight: 700,
+    letterSpacing: -0.2,
+    margin: 0,
   },
 });

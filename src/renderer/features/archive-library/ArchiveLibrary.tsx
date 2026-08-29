@@ -17,7 +17,15 @@ function formatDate(value: string): string {
     return value;
   }
 
-  return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
+  return new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+function formatCount(count: number, singular: string): string {
+  return `${count} ${count === 1 ? singular : `${singular}s`}`;
 }
 
 function ArchiveSummaryButton({
@@ -37,7 +45,8 @@ function ArchiveSummaryButton({
         <span {...stylex.props(styles.archiveCopy)}>
           <span {...stylex.props(styles.archiveName)}>{archive.name}</span>
           <span {...stylex.props(styles.archiveMeta)}>
-            {formatDate(archive.createdAt)} · {archive.tabCount}개 · 창 {archive.windowCount}개
+            {formatDate(archive.createdAt)} · {formatCount(archive.tabCount, 'tab')} ·{' '}
+            {formatCount(archive.windowCount, 'window')}
           </span>
         </span>
         <span {...stylex.props(styles.chevron)} aria-hidden="true">
@@ -57,7 +66,7 @@ function ArchiveList({
 }): React.JSX.Element {
   switch (state.status) {
     case 'loading':
-      return <p {...stylex.props(styles.stateText)}>불러오는 중</p>;
+      return <p {...stylex.props(styles.stateText)}>Loading…</p>;
     case 'error':
       return (
         <p {...stylex.props(styles.errorText)} role="alert">
@@ -66,7 +75,7 @@ function ArchiveList({
       );
     case 'ready':
       return state.archives.length === 0 ? (
-        <p {...stylex.props(styles.stateText)}>보관함이 비어 있습니다</p>
+        <p {...stylex.props(styles.stateText)}>Archive is empty</p>
       ) : (
         <ul {...stylex.props(styles.archiveList)}>
           {state.archives.map((archive) => (
@@ -93,7 +102,7 @@ function ArchiveDetails({
         <div {...stylex.props(styles.detailHeading)}>
           <button
             {...stylex.props(styles.backButton)}
-            aria-label="보관함 목록으로 돌아가기"
+            aria-label="Back to Archive"
             onClick={model.closeArchive}
             type="button"
           >
@@ -102,12 +111,13 @@ function ArchiveDetails({
           <div {...stylex.props(styles.detailCopy)}>
             <h2 {...stylex.props(styles.detailTitle)}>{archive.name}</h2>
             <span {...stylex.props(styles.archiveMeta)}>
-              {formatDate(archive.createdAt)} · {totalTabCount}개 · 창 {archive.windows.length}개
+              {formatDate(archive.createdAt)} · {formatCount(totalTabCount, 'tab')} ·{' '}
+              {formatCount(archive.windows.length, 'window')}
             </span>
           </div>
         </div>
         <button {...stylex.props(styles.textButton)} onClick={model.toggleAllTabs} type="button">
-          {allSelected ? '선택 해제' : '전체 선택'}
+          {allSelected ? 'Clear' : 'Select All'}
         </button>
       </header>
 
@@ -136,7 +146,7 @@ function ArchiveDetails({
           onClick={model.deleteCurrentArchive}
           type="button"
         >
-          보관함 삭제
+          Delete Archive
         </button>
         <button
           {...stylex.props(styles.primaryButton)}
@@ -144,7 +154,7 @@ function ArchiveDetails({
           onClick={model.restoreSelectedTabs}
           type="button"
         >
-          {model.isBusy ? '처리 중' : '선택한 탭 복원'}
+          {model.isBusy ? 'Working…' : 'Restore Selected'}
         </button>
       </div>
     </section>
@@ -156,7 +166,7 @@ function ArchiveLibraryBody({ model }: { readonly model: ArchiveLibraryModel }):
     case 'closed':
       return <ArchiveList onOpen={model.openArchive} state={model.listState} />;
     case 'loading':
-      return <p {...stylex.props(styles.stateText)}>불러오는 중</p>;
+      return <p {...stylex.props(styles.stateText)}>Loading…</p>;
     case 'error':
       return (
         <div {...stylex.props(styles.stateGroup)}>
@@ -168,7 +178,7 @@ function ArchiveLibraryBody({ model }: { readonly model: ArchiveLibraryModel }):
             onClick={model.closeArchive}
             type="button"
           >
-            돌아가기
+            Back
           </button>
         </div>
       );
@@ -181,7 +191,7 @@ export function ArchiveLibrary({ refreshKey }: ArchiveLibraryProps): React.JSX.E
   const model = useArchiveLibrary(refreshKey);
 
   return (
-    <aside {...stylex.props(styles.panel)} aria-label="보관함">
+    <aside {...stylex.props(styles.panel)} aria-label="Archive">
       <ArchiveLibraryBody model={model} />
     </aside>
   );
@@ -264,11 +274,9 @@ const styles = stylex.create({
     ':hover': {
       backgroundColor: tokens.dangerMuted,
     },
-    backgroundColor: tokens.surface,
-    borderColor: tokens.lineStrong,
-    borderRadius: 7,
-    borderStyle: 'solid',
-    borderWidth: 1,
+    backgroundColor: tokens.dangerMuted,
+    borderRadius: 8,
+    borderWidth: 0,
     color: tokens.danger,
     cursor: 'pointer',
     fontSize: 12,
@@ -368,11 +376,10 @@ const styles = stylex.create({
       backgroundColor: tokens.accentStrong,
     },
     backgroundColor: tokens.accent,
-    borderColor: tokens.accent,
-    borderRadius: 7,
-    borderStyle: 'solid',
-    borderWidth: 1,
-    color: tokens.canvas,
+    borderRadius: 8,
+    borderWidth: 0,
+    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(0, 0, 0, 0.3)',
+    color: tokens.textPrimary,
     cursor: 'pointer',
     fontSize: 12,
     fontWeight: 600,
@@ -385,11 +392,9 @@ const styles = stylex.create({
     ':hover': {
       backgroundColor: tokens.surfaceRaised,
     },
-    backgroundColor: tokens.surface,
-    borderColor: tokens.lineStrong,
-    borderRadius: 7,
-    borderStyle: 'solid',
-    borderWidth: 1,
+    backgroundColor: tokens.surfaceRaised,
+    borderRadius: 8,
+    borderWidth: 0,
     color: tokens.textSecondary,
     cursor: 'pointer',
     fontSize: 12,
@@ -420,7 +425,7 @@ const styles = stylex.create({
     },
     backgroundColor: 'transparent',
     borderWidth: 0,
-    color: tokens.accent,
+    color: tokens.accentText,
     cursor: 'pointer',
     flexShrink: 0,
     fontSize: 11,

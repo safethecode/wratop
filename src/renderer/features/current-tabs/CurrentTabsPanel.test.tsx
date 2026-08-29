@@ -75,21 +75,21 @@ describe('CurrentTabsPanel', () => {
     render(<CurrentTabsPanel onArchiveCreated={() => undefined} />);
 
     expect(captureTabs).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: '탭 불러오기' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Load Tabs' })).toBeInTheDocument();
   });
 
   it('Chrome 탭을 창별로 표시한다', async () => {
     installDesktopApi();
     render(<CurrentTabsPanel onArchiveCreated={() => undefined} />);
 
-    fireEvent.click(screen.getByRole('button', { name: '탭 불러오기' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load Tabs' }));
 
     expect(await screen.findByText('Electron 문서')).toBeInTheDocument();
     expect(screen.getByText('StyleX 문서')).toBeInTheDocument();
     expect(screen.getByText('Electron API')).toBeInTheDocument();
-    expect(screen.getByText('창 1')).toBeInTheDocument();
-    expect(screen.getByText('창 2')).toBeInTheDocument();
-    expect(screen.getByText('시크릿 창 1개 제외')).toBeInTheDocument();
+    expect(screen.getByText('Window 1')).toBeInTheDocument();
+    expect(screen.getByText('Window 2')).toBeInTheDocument();
+    expect(screen.getByText('1 incognito window excluded')).toBeInTheDocument();
   });
 
   it('제목 없는 탭에 읽을 수 있는 선택 이름을 붙인다', async () => {
@@ -114,9 +114,11 @@ describe('CurrentTabsPanel', () => {
     });
     render(<CurrentTabsPanel onArchiveCreated={() => undefined} />);
 
-    fireEvent.click(screen.getByRole('button', { name: '탭 불러오기' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load Tabs' }));
 
-    expect(await screen.findByRole('checkbox', { name: '제목 없는 탭 선택' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('checkbox', { name: 'Select Untitled Tab' }),
+    ).toBeInTheDocument();
   });
 
   it('선택한 탭만 이름을 붙여 보관한다', async () => {
@@ -124,11 +126,11 @@ describe('CurrentTabsPanel', () => {
     const { archiveTabs } = installDesktopApi();
     render(<CurrentTabsPanel onArchiveCreated={onArchiveCreated} />);
 
-    fireEvent.click(screen.getByRole('button', { name: '탭 불러오기' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load Tabs' }));
     await screen.findByText('Electron 문서');
-    fireEvent.click(screen.getByRole('checkbox', { name: 'StyleX 문서 선택' }));
-    fireEvent.change(screen.getByLabelText('보관함 이름'), { target: { value: '개발 자료' } });
-    fireEvent.click(screen.getByRole('button', { name: '보관' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select StyleX 문서' }));
+    fireEvent.change(screen.getByLabelText('Archive Name'), { target: { value: '개발 자료' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Archive' }));
 
     await waitFor(() => {
       expect(archiveTabs).toHaveBeenCalledWith({
@@ -140,6 +142,6 @@ describe('CurrentTabsPanel', () => {
     expect(onArchiveCreated).toHaveBeenCalledWith(
       expect.objectContaining({ id: '00000000-0000-4000-8000-000000000001' }),
     );
-    expect(await screen.findByText('2개 탭을 보관했습니다')).toBeInTheDocument();
+    expect(await screen.findByText('Archived 2 tabs')).toBeInTheDocument();
   });
 });

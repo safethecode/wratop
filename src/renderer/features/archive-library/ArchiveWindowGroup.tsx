@@ -29,20 +29,20 @@ export function ArchiveWindowGroup({
     <section {...stylex.props(styles.group)} aria-labelledby={`archive-window-${window.id}`}>
       <header {...stylex.props(styles.windowHeader)}>
         <h4 {...stylex.props(styles.windowTitle)} id={`archive-window-${window.id}`}>
-          창 {windowNumber}
+          Window {windowNumber}
         </h4>
         <span {...stylex.props(styles.windowCount)}>{window.tabs.length}</span>
       </header>
       <ul {...stylex.props(styles.tabList)}>
         {window.tabs.map((tab) => {
-          const title = tab.title || '제목 없는 탭';
+          const title = tab.title || 'Untitled Tab';
 
           return (
             <li {...stylex.props(styles.tabRow)} key={tab.id}>
               <label {...stylex.props(styles.tabLabel)}>
                 <input
                   {...stylex.props(styles.checkbox)}
-                  aria-label={`${title} 선택`}
+                  aria-label={`Select ${title}`}
                   checked={selectedTabIds.has(tab.id)}
                   onChange={() => onToggleTab(tab.id)}
                   type="checkbox"

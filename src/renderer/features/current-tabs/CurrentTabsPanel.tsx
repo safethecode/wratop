@@ -39,9 +39,9 @@ function ReadyToolbar({ model, snapshot }: ReadyTabsViewProps): React.JSX.Elemen
     <div {...stylex.props(styles.toolbar)}>
       <input
         {...stylex.props(styles.searchInput)}
-        aria-label="탭 검색"
+        aria-label="Search Tabs"
         onChange={(event) => model.setSearchQuery(event.target.value)}
-        placeholder="검색"
+        placeholder="Search"
         type="search"
         value={model.searchQuery}
       />
@@ -51,7 +51,8 @@ function ReadyToolbar({ model, snapshot }: ReadyTabsViewProps): React.JSX.Elemen
         </span>
         {snapshot.excludedIncognitoWindowCount > 0 ? (
           <span {...stylex.props(styles.privateNotice)}>
-            시크릿 창 {snapshot.excludedIncognitoWindowCount}개 제외
+            {snapshot.excludedIncognitoWindowCount} incognito{' '}
+            {snapshot.excludedIncognitoWindowCount === 1 ? 'window' : 'windows'} excluded
           </span>
         ) : null}
         <button
@@ -59,11 +60,11 @@ function ReadyToolbar({ model, snapshot }: ReadyTabsViewProps): React.JSX.Elemen
           onClick={model.toggleVisibleTabs}
           type="button"
         >
-          {model.allVisibleSelected ? '선택 해제' : '전체 선택'}
+          {model.allVisibleSelected ? 'Clear' : 'Select All'}
         </button>
         <button
           {...stylex.props(styles.iconButton)}
-          aria-label="탭 다시 불러오기"
+          aria-label="Reload Tabs"
           onClick={model.loadTabs}
           type="button"
         >
@@ -91,7 +92,7 @@ function ReadyTabsView({ model, snapshot }: ReadyTabsViewProps): React.JSX.Eleme
             />
           ))
         ) : (
-          <p {...stylex.props(styles.stateText)}>검색 결과 없음</p>
+          <p {...stylex.props(styles.stateText)}>No Results</p>
         )}
       </div>
 
@@ -100,10 +101,10 @@ function ReadyTabsView({ model, snapshot }: ReadyTabsViewProps): React.JSX.Eleme
       <div {...stylex.props(styles.archiveBar)}>
         <input
           {...stylex.props(styles.nameInput)}
-          aria-label="보관함 이름"
+          aria-label="Archive Name"
           maxLength={80}
           onChange={(event) => model.setName(event.target.value)}
-          placeholder="보관함 이름"
+          placeholder="Archive Name"
           value={model.name}
         />
         <div {...stylex.props(styles.actions)}>
@@ -113,7 +114,7 @@ function ReadyTabsView({ model, snapshot }: ReadyTabsViewProps): React.JSX.Eleme
             onClick={() => model.archiveSelectedTabs(false)}
             type="button"
           >
-            보관
+            Archive
           </button>
           <button
             {...stylex.props(styles.primaryButton)}
@@ -121,7 +122,7 @@ function ReadyTabsView({ model, snapshot }: ReadyTabsViewProps): React.JSX.Eleme
             onClick={() => model.archiveSelectedTabs(true)}
             type="button"
           >
-            {model.isSaving ? '처리 중' : '보관 후 닫기'}
+            {model.isSaving ? 'Saving…' : 'Archive & Close'}
           </button>
         </div>
       </div>
@@ -141,14 +142,14 @@ function CaptureBody({
       return (
         <div {...stylex.props(styles.emptyState)}>
           <button {...stylex.props(styles.primaryButton)} onClick={model.loadTabs} type="button">
-            탭 불러오기
+            Load Tabs
           </button>
         </div>
       );
     case 'loading':
       return (
         <div {...stylex.props(styles.emptyState)} aria-live="polite">
-          <span {...stylex.props(styles.stateText)}>불러오는 중</span>
+          <span {...stylex.props(styles.stateText)}>Loading…</span>
         </div>
       );
     case 'error':
@@ -158,7 +159,7 @@ function CaptureBody({
             {state.message}
           </p>
           <button {...stylex.props(styles.secondaryButton)} onClick={model.loadTabs} type="button">
-            다시 불러오기
+            Try Again
           </button>
         </div>
       );
@@ -171,7 +172,7 @@ export function CurrentTabsPanel({ onArchiveCreated }: CurrentTabsPanelProps): R
   const model = useCurrentTabs({ onArchiveCreated });
 
   return (
-    <section {...stylex.props(styles.panel)} aria-label="현재 탭">
+    <section {...stylex.props(styles.panel)} aria-label="Tabs">
       <CaptureBody model={model} state={model.captureState} />
     </section>
   );
@@ -183,6 +184,10 @@ const styles = stylex.create({
     display: 'flex',
     flexShrink: 0,
     gap: 8,
+    width: {
+      default: 'auto',
+      '@media (max-width: 460px)': '100%',
+    },
   },
   archiveBar: {
     alignItems: 'center',
@@ -192,9 +197,19 @@ const styles = stylex.create({
     borderBlockStartWidth: 1,
     display: 'grid',
     flexShrink: 0,
-    gridTemplateColumns: 'minmax(0, 1fr) auto',
+    gridTemplateColumns: {
+      default: 'minmax(0, 1fr) auto',
+      '@media (max-width: 460px)': 'minmax(0, 1fr)',
+    },
     gap: 12,
-    minHeight: 72,
+    minHeight: {
+      default: 72,
+      '@media (max-width: 460px)': 120,
+    },
+    paddingBlock: {
+      default: 0,
+      '@media (max-width: 460px)': 10,
+    },
     paddingInline: 20,
   },
   count: {
@@ -291,11 +306,10 @@ const styles = stylex.create({
       backgroundColor: tokens.accentStrong,
     },
     backgroundColor: tokens.accent,
-    borderColor: tokens.accent,
-    borderRadius: 7,
-    borderStyle: 'solid',
-    borderWidth: 1,
-    color: tokens.canvas,
+    borderRadius: 8,
+    borderWidth: 0,
+    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(0, 0, 0, 0.3)',
+    color: tokens.textPrimary,
     cursor: 'pointer',
     fontSize: 12,
     fontWeight: 600,
@@ -337,11 +351,9 @@ const styles = stylex.create({
     ':hover': {
       backgroundColor: tokens.surfaceRaised,
     },
-    backgroundColor: tokens.surface,
-    borderColor: tokens.lineStrong,
-    borderRadius: 7,
-    borderStyle: 'solid',
-    borderWidth: 1,
+    backgroundColor: tokens.surfaceRaised,
+    borderRadius: 8,
+    borderWidth: 0,
     color: tokens.textSecondary,
     cursor: 'pointer',
     fontSize: 12,
@@ -362,7 +374,7 @@ const styles = stylex.create({
     },
     backgroundColor: 'transparent',
     borderWidth: 0,
-    color: tokens.accent,
+    color: tokens.accentText,
     cursor: 'pointer',
     fontSize: 11,
     fontWeight: 600,

@@ -6,7 +6,7 @@
   }
 
   :root {
-    color-scheme: light;
+    color-scheme: dark;
     font-family:
       Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
     font-synthesis: none;
@@ -14,11 +14,11 @@
   }
 
   html {
-    background: var(--color-white);
+    background: var(--color-zinc-900);
   }
 
   body {
-    background: var(--color-white);
+    background: var(--color-zinc-900);
     margin: 0;
     min-width: 320px;
   }
@@ -33,5 +33,37 @@
   :where(button, input, textarea, select, [tabindex]):focus-visible {
     outline: 2px solid var(--color-blue-600);
     outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar {
+    height: 10px;
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-clip: padding-box;
+    background-color: var(--color-zinc-500);
+    border: 3px solid transparent;
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .titlebar-drag-region {
+    -webkit-app-region: drag;
+    height: 38px;
+    left: 144px;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 10;
+  }
+
+  @media (max-width: 460px) {
+    .titlebar-drag-region {
+      left: 128px;
+    }
   }
 }

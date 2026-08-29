@@ -45,7 +45,7 @@ export function getTabIds(windows: readonly BrowserWindow[]): readonly string[] 
 }
 
 function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다';
+  return error instanceof Error ? error.message : 'Something went wrong';
 }
 
 function filterWindows(
@@ -68,22 +68,26 @@ function filterWindows(
 }
 
 function createArchiveFeedback(result: ArchiveTabsResult): Feedback {
+  const archivedTabs = `${result.archive.tabCount} ${result.archive.tabCount === 1 ? 'tab' : 'tabs'}`;
+
   if (result.close.status === 'failed') {
     return {
-      message: `${result.archive.tabCount}개 탭은 보관했지만 Chrome에서 닫지 못했습니다. ${result.close.message}`,
+      message: `Archived ${archivedTabs}, but could not close them in Chrome. ${result.close.message}`,
       tone: 'warning',
     };
   }
 
   if (result.close.status === 'completed' && result.close.skippedTabCount > 0) {
+    const skippedTabs = `${result.close.skippedTabCount} ${result.close.skippedTabCount === 1 ? 'tab' : 'tabs'}`;
+
     return {
-      message: `${result.archive.tabCount}개 탭을 보관했습니다. 위치가 바뀐 ${result.close.skippedTabCount}개 탭은 닫지 않았습니다`,
+      message: `Archived ${archivedTabs}. Left ${skippedTabs} open because they moved.`,
       tone: 'warning',
     };
   }
 
   return {
-    message: `${result.archive.tabCount}개 탭을 보관했습니다`,
+    message: `Archived ${archivedTabs}`,
     tone: 'success',
   };
 }
@@ -100,7 +104,7 @@ async function refreshAfterClose(
     const snapshot = await window.desktop.captureTabs();
     setCaptureState({ snapshot, status: 'ready' });
   } catch {
-    // 보관 결과를 유지하고 사용자가 다시 불러오도록 둔다.
+    // Keep the archive result visible and let the user reload the tabs.
   }
 }
 
@@ -171,7 +175,7 @@ export function useCurrentTabs({ onArchiveCreated }: UseCurrentTabsOptions): Cur
 
     if (
       closeAfterSave &&
-      !window.confirm('선택한 탭을 먼저 보관한 다음 Chrome에서 닫습니다. 계속할까요?')
+      !window.confirm('Archive the selected tabs, then close them in Chrome?')
     ) {
       return;
     }

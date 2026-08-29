@@ -76,8 +76,8 @@ describe('ArchiveLibrary', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /개발 자료/ }));
     await screen.findByText('Electron 문서');
-    fireEvent.click(screen.getByRole('checkbox', { name: 'StyleX 문서 선택' }));
-    fireEvent.click(screen.getByRole('button', { name: '선택한 탭 복원' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select StyleX 문서' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore Selected' }));
 
     await waitFor(() => {
       expect(restoreArchive).toHaveBeenCalledWith({
@@ -85,7 +85,7 @@ describe('ArchiveLibrary', () => {
         selectedTabIds: ['tab-1'],
       });
     });
-    expect(await screen.findByText('1개 탭을 1개 창으로 복원했습니다')).toBeInTheDocument();
+    expect(await screen.findByText('Restored 1 tab in 1 window')).toBeInTheDocument();
   });
 
   it('확인한 보관함을 삭제하고 목록을 갱신한다', async () => {
@@ -96,12 +96,12 @@ describe('ArchiveLibrary', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /개발 자료/ }));
     await screen.findByText('Electron 문서');
-    fireEvent.click(screen.getByRole('button', { name: '보관함 삭제' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Archive' }));
 
     await waitFor(() => {
       expect(deleteArchive).toHaveBeenCalledWith(archiveId);
     });
     expect(listArchives).toHaveBeenCalledTimes(2);
-    expect(await screen.findByText('보관함이 비어 있습니다')).toBeInTheDocument();
+    expect(await screen.findByText('Archive is empty')).toBeInTheDocument();
   });
 });

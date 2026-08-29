@@ -50,25 +50,45 @@ function installDesktopApi() {
 }
 
 describe('App', () => {
+  it('split view에서 선택한 화면 제목을 표시한다', async () => {
+    const { listArchives } = installDesktopApi();
+
+    render(<App />);
+
+    expect(screen.getByRole('complementary', { name: 'Navigation' })).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: 'Views' })).toHaveAttribute(
+      'aria-orientation',
+      'vertical',
+    );
+    expect(screen.getByRole('heading', { level: 1, name: 'Tabs' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Archive' }));
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Archive' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(listArchives).toHaveBeenCalledOnce();
+    });
+  });
+
   it('현재 탭과 보관함을 한 화면씩 전환한다', async () => {
     const { captureTabs, listArchives } = installDesktopApi();
 
     render(<App />);
 
-    expect(screen.getByRole('tab', { name: '현재 탭' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('button', { name: '탭 불러오기' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Tabs' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('button', { name: 'Load Tabs' })).toBeInTheDocument();
     expect(document.querySelector('#tabs-panel')).not.toHaveAttribute('hidden');
     expect(document.querySelector('#archives-panel')).toHaveAttribute('hidden');
     expect(captureTabs).not.toHaveBeenCalled();
     expect(listArchives).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('tab', { name: '보관함' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Archive' }));
 
     await waitFor(() => {
       expect(listArchives).toHaveBeenCalledOnce();
     });
-    expect(screen.getByRole('tab', { name: '보관함' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.queryByRole('button', { name: '탭 불러오기' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Archive' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('button', { name: 'Load Tabs' })).not.toBeInTheDocument();
   });
 
   it('화면을 왕복해도 현재 탭 상태를 유지한다', async () => {
@@ -76,21 +96,21 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: '탭 불러오기' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load Tabs' }));
     await screen.findByText('Electron 문서');
-    fireEvent.click(screen.getByRole('checkbox', { name: 'StyleX 문서 선택' }));
-    fireEvent.change(screen.getByRole('searchbox', { name: '탭 검색' }), {
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select StyleX 문서' }));
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search Tabs' }), {
       target: { value: 'Electron' },
     });
 
-    fireEvent.click(screen.getByRole('tab', { name: '보관함' }));
-    await screen.findByText('보관함이 비어 있습니다');
-    fireEvent.click(screen.getByRole('tab', { name: '현재 탭' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Archive' }));
+    await screen.findByText('Archive is empty');
+    fireEvent.click(screen.getByRole('tab', { name: 'Tabs' }));
 
-    const search = screen.getByRole('searchbox', { name: '탭 검색' });
+    const search = screen.getByRole('searchbox', { name: 'Search Tabs' });
     expect(search).toHaveValue('Electron');
     fireEvent.change(search, { target: { value: '' } });
-    expect(screen.getByRole('checkbox', { name: 'StyleX 문서 선택' })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Select StyleX 문서' })).not.toBeChecked();
     expect(captureTabs).toHaveBeenCalledOnce();
   });
 
@@ -99,18 +119,18 @@ describe('App', () => {
 
     render(<App />);
 
-    const currentTabs = screen.getByRole('tab', { name: '현재 탭' });
+    const currentTabs = screen.getByRole('tab', { name: 'Tabs' });
     currentTabs.focus();
-    fireEvent.keyDown(currentTabs, { key: 'ArrowRight' });
+    fireEvent.keyDown(currentTabs, { key: 'ArrowDown' });
 
-    const archives = screen.getByRole('tab', { name: '보관함' });
+    const archives = screen.getByRole('tab', { name: 'Archive' });
     expect(archives).toHaveFocus();
     expect(archives).toHaveAttribute('aria-selected', 'true');
     await waitFor(() => {
       expect(listArchives).toHaveBeenCalledOnce();
     });
 
-    fireEvent.keyDown(archives, { key: 'ArrowLeft' });
+    fireEvent.keyDown(archives, { key: 'ArrowUp' });
 
     expect(currentTabs).toHaveFocus();
     expect(currentTabs).toHaveAttribute('aria-selected', 'true');
