@@ -36,7 +36,10 @@ async function bootstrap(): Promise<void> {
   statusBar = createStatusBar({
     captureTabs: () => archiveService.captureTabs(),
     iconPath: path.join(app.getAppPath(), 'assets', 'wratopStatusTemplate.png'),
-    openWindow: showMainWindow,
+    openWindow: () => {
+      app.focus({ steal: true });
+      showMainWindow();
+    },
     quit: () => app.quit(),
   });
 
