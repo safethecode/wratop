@@ -149,6 +149,67 @@ function ReadyTabsView({ model, snapshot }: ReadyTabsViewProps): React.JSX.Eleme
   );
 }
 
+function SkeletonTabRow({ short = false }: { readonly short?: boolean }): React.JSX.Element {
+  return (
+    <div {...stylex.props(styles.skeletonTabRow)}>
+      <span {...stylex.props(styles.skeletonBlock, styles.skeletonCheckbox)} />
+      <span {...stylex.props(styles.skeletonTabCopy)}>
+        <span
+          {...stylex.props(
+            styles.skeletonBlock,
+            styles.skeletonTitle,
+            short && styles.skeletonTitleShort,
+          )}
+        />
+        <span {...stylex.props(styles.skeletonBlock, styles.skeletonDomain)} />
+      </span>
+    </div>
+  );
+}
+
+function LoadingTabsView({
+  onRetry,
+}: {
+  readonly onRetry: () => Promise<void>;
+}): React.JSX.Element {
+  return (
+    <div {...stylex.props(styles.loadingView)} aria-busy="true">
+      <span {...stylex.props(styles.visuallyHidden)} aria-label="Loading tabs" role="status" />
+      <div {...stylex.props(styles.skeletonToolbar)}>
+        <span {...stylex.props(styles.skeletonBlock, styles.skeletonSearch)} aria-hidden="true" />
+        <div {...stylex.props(styles.skeletonToolbarActions)}>
+          <span {...stylex.props(styles.skeletonBlock, styles.skeletonCount)} aria-hidden="true" />
+          <button {...stylex.props(styles.refreshButton)} onClick={onRetry} type="button">
+            Retry
+          </button>
+        </div>
+      </div>
+      <div {...stylex.props(styles.skeletonList)} aria-hidden="true">
+        <div {...stylex.props(styles.skeletonWindowHeader)}>
+          <span {...stylex.props(styles.skeletonBlock, styles.skeletonWindowTitle)} />
+          <span {...stylex.props(styles.skeletonBlock, styles.skeletonWindowCount)} />
+        </div>
+        <SkeletonTabRow />
+        <SkeletonTabRow short />
+        <SkeletonTabRow />
+        <div {...stylex.props(styles.skeletonWindowHeader)}>
+          <span {...stylex.props(styles.skeletonBlock, styles.skeletonWindowTitle)} />
+          <span {...stylex.props(styles.skeletonBlock, styles.skeletonWindowCount)} />
+        </div>
+        <SkeletonTabRow short />
+        <SkeletonTabRow />
+      </div>
+      <div {...stylex.props(styles.archiveBar)} aria-hidden="true">
+        <span {...stylex.props(styles.skeletonBlock, styles.skeletonArchiveInput)} />
+        <span {...stylex.props(styles.actions)}>
+          <span {...stylex.props(styles.skeletonBlock, styles.skeletonButton)} />
+          <span {...stylex.props(styles.skeletonBlock, styles.skeletonButtonWide)} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function CaptureBody({
   model,
   state,
@@ -166,14 +227,7 @@ function CaptureBody({
         </div>
       );
     case 'loading':
-      return (
-        <div {...stylex.props(styles.emptyState)} aria-live="polite">
-          <span {...stylex.props(styles.stateText)}>Loading…</span>
-          <button {...stylex.props(styles.secondaryButton)} onClick={model.loadTabs} type="button">
-            Retry
-          </button>
-        </div>
-      );
+      return <LoadingTabsView onRetry={model.loadTabs} />;
     case 'error':
       return (
         <div {...stylex.props(styles.emptyState)}>
@@ -202,6 +256,11 @@ export function CurrentTabsPanel({
     </section>
   );
 }
+
+const skeletonPulse = stylex.keyframes({
+  '0%, 100%': { opacity: 0.42 },
+  '50%': { opacity: 0.78 },
+});
 
 const styles = stylex.create({
   actions: {
@@ -397,6 +456,113 @@ const styles = stylex.create({
     paddingBlock: 9,
     paddingInline: 13,
   },
+  skeletonBlock: {
+    animationDuration: '1.4s',
+    animationIterationCount: 'infinite',
+    animationName: {
+      default: skeletonPulse,
+      '@media (prefers-reduced-motion: reduce)': 'none',
+    },
+    animationTimingFunction: 'ease-in-out',
+    backgroundColor: tokens.textMuted,
+    borderRadius: 6,
+    display: 'block',
+  },
+  skeletonArchiveInput: {
+    height: 44,
+    minWidth: 0,
+    width: '100%',
+  },
+  skeletonButton: {
+    height: 44,
+    width: 68,
+  },
+  skeletonButtonWide: {
+    height: 44,
+    width: 108,
+  },
+  skeletonCheckbox: {
+    borderRadius: 4,
+    flexShrink: 0,
+    height: 16,
+    width: 16,
+  },
+  skeletonCount: {
+    height: 10,
+    width: 88,
+  },
+  skeletonDomain: {
+    height: 8,
+    width: 96,
+  },
+  skeletonList: {
+    flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
+  },
+  skeletonSearch: {
+    height: 44,
+    width: '100%',
+  },
+  skeletonTabCopy: {
+    display: 'grid',
+    flex: 1,
+    gap: 7,
+    minWidth: 0,
+  },
+  skeletonTabRow: {
+    alignItems: 'center',
+    borderBlockEndColor: tokens.line,
+    borderBlockEndStyle: 'solid',
+    borderBlockEndWidth: 1,
+    display: 'flex',
+    gap: 12,
+    minHeight: 66,
+    paddingInline: 20,
+  },
+  skeletonTitle: {
+    height: 11,
+    maxWidth: 220,
+    width: '74%',
+  },
+  skeletonTitleShort: {
+    maxWidth: 156,
+    width: '52%',
+  },
+  skeletonToolbar: {
+    backgroundColor: tokens.surface,
+    borderBlockEndColor: tokens.line,
+    borderBlockEndStyle: 'solid',
+    borderBlockEndWidth: 1,
+    display: 'grid',
+    flexShrink: 0,
+    gap: 8,
+    minHeight: 104,
+    paddingBlock: 8,
+    paddingInline: 20,
+  },
+  skeletonToolbarActions: {
+    alignItems: 'center',
+    display: 'flex',
+    justifyContent: 'space-between',
+    minHeight: 44,
+  },
+  skeletonWindowCount: {
+    height: 9,
+    width: 18,
+  },
+  skeletonWindowHeader: {
+    alignItems: 'center',
+    backgroundColor: tokens.surfaceRaised,
+    display: 'flex',
+    justifyContent: 'space-between',
+    minHeight: 44,
+    paddingInline: 20,
+  },
+  skeletonWindowTitle: {
+    height: 10,
+    width: 68,
+  },
   stateText: {
     color: tokens.textMuted,
     fontSize: 12,
@@ -437,6 +603,23 @@ const styles = stylex.create({
     justifyContent: 'space-between',
     minWidth: 0,
     width: '100%',
+  },
+  loadingView: {
+    display: 'flex',
+    flex: 1,
+    flexDirection: 'column',
+    minHeight: 0,
+  },
+  visuallyHidden: {
+    borderWidth: 0,
+    clip: 'rect(0 0 0 0)',
+    height: 1,
+    margin: -1,
+    overflow: 'hidden',
+    padding: 0,
+    position: 'absolute',
+    whiteSpace: 'nowrap',
+    width: 1,
   },
   windowList: {
     contentVisibility: 'auto',

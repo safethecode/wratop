@@ -86,7 +86,7 @@ describe('CurrentTabsPanel', () => {
     expect(screen.getByRole('checkbox', { name: 'Select Electron 문서' })).toBeChecked();
   });
 
-  it('탭을 불러오는 중에도 다시 요청할 수 있다', async () => {
+  it('탭을 불러오는 동안 skeleton과 재시도를 표시한다', async () => {
     const { captureTabs } = installDesktopApi();
     let completeFirstCapture = (_value: typeof snapshot): void => {
       throw new Error('첫 Chrome 확인 요청이 필요합니다.');
@@ -102,6 +102,9 @@ describe('CurrentTabsPanel', () => {
 
     render(<CurrentTabsPanel isActive onArchiveCreated={() => undefined} />);
     await act(async () => undefined);
+
+    expect(screen.getByRole('status', { name: 'Loading tabs' })).toBeInTheDocument();
+    expect(screen.queryByText('Loading…')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     await act(async () => {
@@ -317,7 +320,7 @@ describe('CurrentTabsPanel', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Refresh Tabs' }));
 
-    expect(screen.getByText('Loading…')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Loading tabs' })).toBeInTheDocument();
 
     await act(async () => {
       completeAutoCapture(snapshot);
