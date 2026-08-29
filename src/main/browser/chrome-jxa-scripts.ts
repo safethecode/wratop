@@ -53,12 +53,12 @@ export const closeChromeTabsScript = `
 function run(argv) {
   var targets = JSON.parse(argv[0]);
   var chrome = Application('Google Chrome');
-  var browserWindows = chrome.windows();
   var closedTabCount = 0;
   var skippedTabCount = 0;
 
   for (var targetIndex = 0; targetIndex < targets.length; targetIndex += 1) {
     var target = targets[targetIndex];
+    var browserWindows = chrome.windows();
     var matchingWindow = null;
 
     for (var windowIndex = 0; windowIndex < browserWindows.length; windowIndex += 1) {
@@ -116,8 +116,8 @@ function run(argv) {
       continue;
     }
 
-    chrome.windows.push(chrome.Window({ mode: 'normal' }));
-    var browserWindow = chrome.windows()[0];
+    var browserWindow = chrome.Window({ mode: 'normal' });
+    chrome.windows.push(browserWindow);
     browserWindow.activeTab.url = windowData.urls[0];
 
     for (var tabIndex = 1; tabIndex < windowData.urls.length; tabIndex += 1) {
