@@ -7,6 +7,7 @@ import type { CaptureState, CurrentTabsModel, Feedback } from './use-current-tab
 import { getTabIds, useCurrentTabs } from './use-current-tabs';
 
 interface CurrentTabsPanelProps {
+  readonly isActive: boolean;
   readonly onArchiveCreated: (archive: TabArchiveSummary) => void;
 }
 
@@ -168,8 +169,11 @@ function CaptureBody({
   }
 }
 
-export function CurrentTabsPanel({ onArchiveCreated }: CurrentTabsPanelProps): React.JSX.Element {
-  const model = useCurrentTabs({ onArchiveCreated });
+export function CurrentTabsPanel({
+  isActive,
+  onArchiveCreated,
+}: CurrentTabsPanelProps): React.JSX.Element {
+  const model = useCurrentTabs({ isActive, onArchiveCreated });
 
   return (
     <section {...stylex.props(styles.panel)} aria-label="Tabs">
@@ -268,9 +272,9 @@ const styles = stylex.create({
     fontSize: 16,
     height: 44,
     justifyContent: 'center',
-    padding: 0,
     minHeight: 44,
     minWidth: 44,
+    padding: 0,
     width: 44,
   },
   nameInput: {

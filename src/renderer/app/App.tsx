@@ -153,7 +153,7 @@ export function App(): React.JSX.Element {
             id="tabs-panel"
             role="tabpanel"
           >
-            <CurrentTabsPanel onArchiveCreated={handleArchiveCreated} />
+            <CurrentTabsPanel isActive={view === 'tabs'} onArchiveCreated={handleArchiveCreated} />
           </section>
           <section
             {...stylex.props(styles.panel)}

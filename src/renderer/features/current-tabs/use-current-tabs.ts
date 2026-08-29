@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 
 import type {
   ArchiveTabsResult,
@@ -19,8 +19,17 @@ export interface Feedback {
 }
 
 interface UseCurrentTabsOptions {
+  readonly isActive: boolean;
   readonly onArchiveCreated: (archive: TabArchiveSummary) => void;
 }
+
+interface RefreshTabsOptions {
+  readonly queueIfBusy: boolean;
+  readonly selectAll: boolean;
+  readonly showLoading: boolean;
+}
+
+const autoRefreshIntervalMs = 15_000;
 
 export interface CurrentTabsModel {
   readonly allVisibleSelected: boolean;
@@ -92,29 +101,74 @@ function createArchiveFeedback(result: ArchiveTabsResult): Feedback {
   };
 }
 
-async function refreshAfterClose(
-  result: ArchiveTabsResult,
-  setCaptureState: (state: CaptureState) => void,
-): Promise<void> {
-  if (result.close.status !== 'completed') {
-    return;
-  }
-
-  try {
-    const snapshot = await window.desktop.captureTabs();
-    setCaptureState({ snapshot, status: 'ready' });
-  } catch {
-    // Keep the archive result visible and let the user reload the tabs.
-  }
+function hasSameTabs(current: BrowserSnapshot | null, next: BrowserSnapshot): boolean {
+  return (
+    current !== null &&
+    current.excludedIncognitoWindowCount === next.excludedIncognitoWindowCount &&
+    JSON.stringify(current.windows) === JSON.stringify(next.windows)
+  );
 }
 
-export function useCurrentTabs({ onArchiveCreated }: UseCurrentTabsOptions): CurrentTabsModel {
+function reconcileSelectedTabIds(
+  current: ReadonlySet<string>,
+  nextTabIds: readonly string[],
+  selectAll: boolean,
+  tabsUnchanged: boolean,
+): ReadonlySet<string> {
+  if (selectAll) {
+    return new Set(nextTabIds);
+  }
+
+  if (tabsUnchanged) {
+    return current;
+  }
+
+  const availableTabIds = new Set(nextTabIds);
+  return new Set([...current].filter((tabId) => availableTabIds.has(tabId)));
+}
+
+function isDocumentActive(): boolean {
+  return document.visibilityState === 'visible' && document.hasFocus();
+}
+
+function canApplyCapture(
+  isEnabled: boolean,
+  currentGeneration: number,
+  captureGeneration: number,
+): boolean {
+  return isEnabled && currentGeneration === captureGeneration;
+}
+
+function mergeRefreshOptions(
+  current: RefreshTabsOptions | null,
+  next: RefreshTabsOptions,
+): RefreshTabsOptions {
+  if (current === null) {
+    return next;
+  }
+
+  return {
+    queueIfBusy: true,
+    selectAll: current.selectAll || next.selectAll,
+    showLoading: current.showLoading || next.showLoading,
+  };
+}
+
+export function useCurrentTabs({
+  isActive,
+  onArchiveCreated,
+}: UseCurrentTabsOptions): CurrentTabsModel {
   const [captureState, setCaptureState] = useState<CaptureState>({ status: 'idle' });
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTabIds, setSelectedTabIds] = useState<ReadonlySet<string>>(() => new Set());
+  const captureGenerationRef = useRef(0);
+  const isRefreshEnabledRef = useRef(false);
+  const isRefreshInFlightRef = useRef(false);
+  const pendingRefreshRef = useRef<RefreshTabsOptions | null>(null);
+  const snapshotRef = useRef<BrowserSnapshot | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const snapshot = captureState.status === 'ready' ? captureState.snapshot : null;
   const filteredWindows = useMemo(
@@ -125,18 +179,166 @@ export function useCurrentTabs({ onArchiveCreated }: UseCurrentTabsOptions): Cur
   const allVisibleSelected =
     visibleTabIds.length > 0 && visibleTabIds.every((tabId) => selectedTabIds.has(tabId));
 
-  const loadTabs = async (): Promise<void> => {
-    setCaptureState({ status: 'loading' });
-    setFeedback(null);
+  const applySnapshot = useCallback(
+    (nextSnapshot: BrowserSnapshot, { selectAll, showLoading }: RefreshTabsOptions): void => {
+      const previousSnapshot = snapshotRef.current;
+      const nextTabIds = getTabIds(nextSnapshot.windows);
+      const tabsUnchanged = hasSameTabs(previousSnapshot, nextSnapshot);
+      const shouldSelectAll = selectAll || previousSnapshot === null;
 
-    try {
-      const nextSnapshot = await window.desktop.captureTabs();
-      setCaptureState({ snapshot: nextSnapshot, status: 'ready' });
-      setSelectedTabIds(new Set(getTabIds(nextSnapshot.windows)));
-    } catch (error: unknown) {
-      setCaptureState({ message: getErrorMessage(error), status: 'error' });
+      setSelectedTabIds((current) =>
+        reconcileSelectedTabIds(current, nextTabIds, shouldSelectAll, tabsUnchanged),
+      );
+      snapshotRef.current = nextSnapshot;
+
+      if (showLoading || !tabsUnchanged) {
+        setCaptureState({ snapshot: nextSnapshot, status: 'ready' });
+      }
+    },
+    [],
+  );
+
+  const performRefresh = useCallback(
+    async (options: RefreshTabsOptions, captureGeneration: number): Promise<void> => {
+      try {
+        const nextSnapshot = await window.desktop.captureTabs();
+
+        if (
+          !canApplyCapture(
+            isRefreshEnabledRef.current,
+            captureGenerationRef.current,
+            captureGeneration,
+          )
+        ) {
+          return;
+        }
+
+        applySnapshot(nextSnapshot, options);
+      } catch (error: unknown) {
+        if (
+          canApplyCapture(
+            isRefreshEnabledRef.current,
+            captureGenerationRef.current,
+            captureGeneration,
+          ) &&
+          (options.showLoading || snapshotRef.current === null)
+        ) {
+          setCaptureState({ message: getErrorMessage(error), status: 'error' });
+        }
+      }
+    },
+    [applySnapshot],
+  );
+
+  const runRefreshQueue = useCallback(
+    async (firstOptions: RefreshTabsOptions): Promise<void> => {
+      isRefreshInFlightRef.current = true;
+      let nextOptions: RefreshTabsOptions | null = firstOptions;
+
+      try {
+        while (nextOptions !== null) {
+          pendingRefreshRef.current = null;
+          await performRefresh(nextOptions, captureGenerationRef.current);
+          nextOptions = pendingRefreshRef.current;
+        }
+      } finally {
+        isRefreshInFlightRef.current = false;
+      }
+    },
+    [performRefresh],
+  );
+
+  const refreshTabs = useCallback(
+    async (options: RefreshTabsOptions): Promise<void> => {
+      if (!isRefreshEnabledRef.current) {
+        return;
+      }
+
+      if (options.showLoading) {
+        setCaptureState({ status: 'loading' });
+        setFeedback(null);
+      }
+
+      if (isRefreshInFlightRef.current) {
+        if (options.queueIfBusy) {
+          captureGenerationRef.current += 1;
+          pendingRefreshRef.current = mergeRefreshOptions(pendingRefreshRef.current, options);
+        }
+
+        return;
+      }
+
+      await runRefreshQueue(options);
+    },
+    [runRefreshQueue],
+  );
+
+  const loadTabs = useCallback(
+    async (): Promise<void> =>
+      refreshTabs({ queueIfBusy: true, selectAll: true, showLoading: true }),
+    [refreshTabs],
+  );
+
+  const setRefreshEnabled = useCallback((isEnabled: boolean): void => {
+    if (isRefreshEnabledRef.current === isEnabled) {
+      return;
     }
-  };
+
+    isRefreshEnabledRef.current = isEnabled;
+    captureGenerationRef.current += 1;
+
+    if (!isEnabled) {
+      pendingRefreshRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isActive) {
+      setRefreshEnabled(false);
+      return undefined;
+    }
+
+    const refreshOnActivation = (): void => {
+      const isInitialRefresh = snapshotRef.current === null;
+      void refreshTabs({
+        queueIfBusy: true,
+        selectAll: isInitialRefresh,
+        showLoading: isInitialRefresh,
+      });
+    };
+    const updateActivity = (): void => {
+      const wasRefreshEnabled = isRefreshEnabledRef.current;
+      const isActiveDocument = isDocumentActive();
+      setRefreshEnabled(isActiveDocument);
+
+      if (isActiveDocument && !wasRefreshEnabled) {
+        refreshOnActivation();
+      }
+    };
+    const handleBlur = (): void => {
+      setRefreshEnabled(false);
+    };
+    const intervalId = window.setInterval(() => {
+      void refreshTabs({ queueIfBusy: false, selectAll: false, showLoading: false });
+    }, autoRefreshIntervalMs);
+
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', updateActivity);
+    document.addEventListener('visibilitychange', updateActivity);
+    setRefreshEnabled(isDocumentActive());
+
+    if (isRefreshEnabledRef.current) {
+      refreshOnActivation();
+    }
+
+    return () => {
+      setRefreshEnabled(false);
+      window.clearInterval(intervalId);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', updateActivity);
+      document.removeEventListener('visibilitychange', updateActivity);
+    };
+  }, [isActive, refreshTabs, setRefreshEnabled]);
 
   const toggleTab = (tabId: string): void => {
     setSelectedTabIds((current) => {
@@ -194,7 +396,10 @@ export function useCurrentTabs({ onArchiveCreated }: UseCurrentTabsOptions): Cur
       setName('');
       setSelectedTabIds(new Set());
       setFeedback(createArchiveFeedback(result));
-      await refreshAfterClose(result, setCaptureState);
+
+      if (result.close.status === 'completed') {
+        await refreshTabs({ queueIfBusy: true, selectAll: false, showLoading: false });
+      }
     } catch (error: unknown) {
       setFeedback({ message: getErrorMessage(error), tone: 'error' });
     } finally {

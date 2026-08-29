@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
 
@@ -32,6 +32,8 @@ function installDesktopApi() {
     ],
   }));
   const listArchives = vi.fn(async () => []);
+  vi.spyOn(document, 'hasFocus').mockReturnValue(true);
+  vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
 
   Object.defineProperty(window, 'desktop', {
     configurable: true,
@@ -50,6 +52,10 @@ function installDesktopApi() {
 }
 
 describe('App', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('split view에서 선택한 화면 제목을 표시한다', async () => {
     const { listArchives } = installDesktopApi();
 
@@ -76,10 +82,10 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByRole('tab', { name: 'Tabs' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('button', { name: 'Load Tabs' })).toBeInTheDocument();
+    expect(await screen.findByText('Electron 문서')).toBeInTheDocument();
     expect(document.querySelector('#tabs-panel')).not.toHaveAttribute('hidden');
     expect(document.querySelector('#archives-panel')).toHaveAttribute('hidden');
-    expect(captureTabs).not.toHaveBeenCalled();
+    expect(captureTabs).toHaveBeenCalledOnce();
     expect(listArchives).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Archive' }));
@@ -88,7 +94,8 @@ describe('App', () => {
       expect(listArchives).toHaveBeenCalledOnce();
     });
     expect(screen.getByRole('tab', { name: 'Archive' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.queryByRole('button', { name: 'Load Tabs' })).not.toBeInTheDocument();
+    expect(document.querySelector('#tabs-panel')).toHaveAttribute('hidden');
+    expect(document.querySelector('#archives-panel')).not.toHaveAttribute('hidden');
   });
 
   it('화면을 왕복해도 현재 탭 상태를 유지한다', async () => {
@@ -96,7 +103,6 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Load Tabs' }));
     await screen.findByText('Electron 문서');
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select StyleX 문서' }));
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search Tabs' }), {
@@ -111,7 +117,7 @@ describe('App', () => {
     expect(search).toHaveValue('Electron');
     fireEvent.change(search, { target: { value: '' } });
     expect(screen.getByRole('checkbox', { name: 'Select StyleX 문서' })).not.toBeChecked();
-    expect(captureTabs).toHaveBeenCalledOnce();
+    expect(captureTabs).toHaveBeenCalledTimes(2);
   });
 
   it('방향키로 화면 탭을 전환한다', async () => {
