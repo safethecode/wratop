@@ -512,12 +512,12 @@ const styles = stylex.create({
   },
   skeletonTabRow: {
     alignItems: 'center',
-    borderBlockEndColor: tokens.line,
-    borderBlockEndStyle: 'solid',
-    borderBlockEndWidth: 1,
+    borderBlockStartColor: tokens.line,
+    borderBlockStartStyle: 'solid',
+    borderBlockStartWidth: 1,
     display: 'flex',
     gap: 12,
-    minHeight: 66,
+    minHeight: 60,
     paddingInline: 20,
   },
   skeletonTitle: {
@@ -554,9 +554,12 @@ const styles = stylex.create({
   skeletonWindowHeader: {
     alignItems: 'center',
     backgroundColor: tokens.surfaceRaised,
+    borderBlockStartColor: tokens.line,
+    borderBlockStartStyle: 'solid',
+    borderBlockStartWidth: 1,
     display: 'flex',
     justifyContent: 'space-between',
-    minHeight: 44,
+    minHeight: 36,
     paddingInline: 20,
   },
   skeletonWindowTitle: {
