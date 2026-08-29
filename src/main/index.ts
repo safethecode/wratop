@@ -1,15 +1,19 @@
 import path from 'node:path';
 
-import { app, BrowserWindow, dialog, session } from 'electron';
+import { app, dialog, session } from 'electron';
 
 import { FileArchiveRepository } from './archive/archive-repository';
 import { ArchiveService } from './archive/archive-service';
 import { ChromeAppleEventsGateway } from './browser/chrome-apple-events';
 import { executeJxa } from './browser/jxa-executor';
 import { registerIpcHandlers } from './ipc';
-import { createMainWindow } from './window';
+import type { StatusBar } from './status-bar';
+import { createStatusBar } from './status-bar';
+import { showMainWindow } from './window';
 
 app.enableSandbox();
+
+let statusBar: StatusBar | null = null;
 
 async function bootstrap(): Promise<void> {
   await app.whenReady();
@@ -28,12 +32,21 @@ async function bootstrap(): Promise<void> {
   const archiveService = new ArchiveService(repository, browserGateway);
 
   registerIpcHandlers(MAIN_WINDOW_WEBPACK_ENTRY, archiveService);
-  createMainWindow();
+  showMainWindow();
+  statusBar = createStatusBar({
+    captureTabs: () => archiveService.captureTabs(),
+    iconPath: path.join(app.getAppPath(), 'assets', 'wratopStatusTemplate.png'),
+    openWindow: showMainWindow,
+    quit: () => app.quit(),
+  });
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createMainWindow();
-    }
+    showMainWindow();
+  });
+
+  app.on('before-quit', () => {
+    statusBar?.destroy();
+    statusBar = null;
   });
 }
 

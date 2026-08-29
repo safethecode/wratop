@@ -33,3 +33,20 @@ export function createMainWindow(): BrowserWindow {
 
   return window;
 }
+
+export function showMainWindow(): BrowserWindow {
+  const [existingWindow] = BrowserWindow.getAllWindows();
+
+  if (existingWindow === undefined) {
+    return createMainWindow();
+  }
+
+  if (existingWindow.isMinimized()) {
+    existingWindow.restore();
+  }
+
+  existingWindow.show();
+  existingWindow.focus();
+
+  return existingWindow;
+}
