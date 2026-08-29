@@ -1,5 +1,11 @@
+import path from 'node:path';
+
 import { app, BrowserWindow, dialog, session } from 'electron';
 
+import { FileArchiveRepository } from './archive/archive-repository';
+import { ArchiveService } from './archive/archive-service';
+import { ChromeAppleEventsGateway } from './browser/chrome-apple-events';
+import { executeJxa } from './browser/jxa-executor';
 import { registerIpcHandlers } from './ipc';
 import { createMainWindow } from './window';
 
@@ -12,7 +18,11 @@ async function bootstrap(): Promise<void> {
     callback(false);
   });
 
-  registerIpcHandlers(MAIN_WINDOW_WEBPACK_ENTRY);
+  const repository = new FileArchiveRepository(path.join(app.getPath('userData'), 'archives'));
+  const browserGateway = new ChromeAppleEventsGateway(executeJxa);
+  const archiveService = new ArchiveService(repository, browserGateway);
+
+  registerIpcHandlers(MAIN_WINDOW_WEBPACK_ENTRY, archiveService);
   createMainWindow();
 
   app.on('activate', () => {
