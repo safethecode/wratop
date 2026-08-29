@@ -56,7 +56,7 @@ describe('ChromeAppleEventsGateway', () => {
       () => new Date('2026-08-29T04:00:00.000Z'),
     );
 
-    await expect(gateway.captureTabs()).rejects.toThrow('Chrome이 실행 중이 아닙니다');
+    await expect(gateway.captureTabs()).rejects.toThrow('Chrome is not running');
   });
 
   it('필수 탭 정보가 빠진 JXA 응답을 거부한다', async () => {
@@ -68,7 +68,7 @@ describe('ChromeAppleEventsGateway', () => {
       }),
     );
 
-    await expect(gateway.captureTabs()).rejects.toThrow('Chrome 탭 응답이 올바르지 않습니다');
+    await expect(gateway.captureTabs()).rejects.toThrow('Chrome returned an invalid tab response');
   });
 
   it('탭 ID와 예상 URL을 JXA에 전달하고 닫기 결과를 반환한다', async () => {
@@ -111,7 +111,9 @@ describe('ChromeAppleEventsGateway', () => {
       JSON.stringify({ closedTabCount: -1, skippedTabCount: 0 }),
     );
 
-    await expect(gateway.closeTabs([])).rejects.toThrow('Chrome 탭 닫기 응답이 올바르지 않습니다');
+    await expect(gateway.closeTabs([])).rejects.toThrow(
+      'Chrome returned an invalid close response',
+    );
   });
 
   it('복원할 탭을 URL과 활성 위치만 담은 창 payload로 전달한다', async () => {

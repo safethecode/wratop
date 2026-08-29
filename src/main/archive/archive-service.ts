@@ -64,7 +64,7 @@ export class ArchiveService {
     const archive: TabArchive = {
       createdAt,
       id: this.options.createId(),
-      name: command.name.trim() || `${createdAt.slice(0, 10)} Chrome 탭`,
+      name: command.name.trim() || `${createdAt.slice(0, 10)} Chrome Tabs`,
       source: 'chrome',
       windows,
     };

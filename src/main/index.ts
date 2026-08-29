@@ -40,6 +40,6 @@ app.on('window-all-closed', () => {
 
 void bootstrap().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  dialog.showErrorBox('wratop을 시작하지 못했습니다', message);
+  dialog.showErrorBox('Could not start wratop', message);
   app.quit();
 });

@@ -131,7 +131,7 @@ describe('ArchiveService', () => {
 
     expect(closeCount).toBe(0);
     expect(result.close).toEqual({ status: 'not-requested' });
-    expect(result.archive.name).toBe('2026-08-29 Chrome 탭');
+    expect(result.archive.name).toBe('2026-08-29 Chrome Tabs');
   });
 
   it('탭 닫기가 실패해도 저장된 아카이브 정보를 반환한다', async () => {

@@ -21,7 +21,7 @@ describe('RuntimeCard', () => {
 
     render(<RuntimeCard />);
 
-    expect(screen.getByText('런타임 확인 중')).toBeInTheDocument();
+    expect(screen.getByText('Checking runtime…')).toBeInTheDocument();
     expect(await screen.findByText('44.0.0')).toBeInTheDocument();
     expect(screen.getByText('152.0.7977.54')).toBeInTheDocument();
     expect(screen.getByText('24.18.1')).toBeInTheDocument();
@@ -37,6 +37,6 @@ describe('RuntimeCard', () => {
 
     render(<RuntimeCard />);
 
-    expect(await screen.findByText('런타임 정보를 불러오지 못했습니다')).toBeInTheDocument();
+    expect(await screen.findByText('Could not load runtime information')).toBeInTheDocument();
   });
 });

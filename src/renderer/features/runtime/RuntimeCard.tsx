@@ -51,12 +51,12 @@ export function RuntimeCard(): React.JSX.Element {
         {state.status === 'loading' && (
           <div {...stylex.props(styles.stateMessage)}>
             <span {...stylex.props(styles.pulse)} aria-hidden="true" />
-            런타임 확인 중
+            Checking runtime…
           </div>
         )}
 
         {state.status === 'error' && (
-          <p {...stylex.props(styles.error)}>런타임 정보를 불러오지 못했습니다</p>
+          <p {...stylex.props(styles.error)}>Could not load runtime information</p>
         )}
 
         {state.status === 'ready' && (

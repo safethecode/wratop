@@ -28,7 +28,7 @@ export class ChromeAppleEventsGateway implements BrowserGateway {
     const result: unknown = JSON.parse(serialized);
 
     if (this.isRecord(result) && result.status === 'not-running') {
-      throw new Error('Chrome이 실행 중이 아닙니다');
+      throw new Error('Chrome is not running');
     }
 
     if (
@@ -39,7 +39,7 @@ export class ChromeAppleEventsGateway implements BrowserGateway {
       !Array.isArray(result.windows) ||
       !result.windows.every(isBrowserWindow)
     ) {
-      throw new Error('Chrome 탭 응답이 올바르지 않습니다');
+      throw new Error('Chrome returned an invalid tab response');
     }
 
     return {
@@ -63,7 +63,7 @@ export class ChromeAppleEventsGateway implements BrowserGateway {
       !Number.isInteger(result.skippedTabCount) ||
       result.skippedTabCount < 0
     ) {
-      throw new Error('Chrome 탭 닫기 응답이 올바르지 않습니다');
+      throw new Error('Chrome returned an invalid close response');
     }
 
     return {
