@@ -1,6 +1,6 @@
 {
   "name": "wratop",
-  "productName": "wratop",
+  "productName": "Wratop",
   "version": "0.1.0",
   "description": "A maintainable macOS desktop app foundation",
   "main": ".webpack/main",

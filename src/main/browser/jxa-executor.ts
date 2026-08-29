@@ -15,7 +15,7 @@ export function executeJxa(script: string, arguments_: readonly string[]): Promi
           if (detail.includes('(-1743)')) {
             reject(
               new Error(
-                'Chrome automation permission is required. Allow wratop in System Settings.',
+                'Chrome automation permission is required. Allow Wratop in System Settings.',
               ),
             );
             return;

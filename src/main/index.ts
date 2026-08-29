@@ -22,7 +22,8 @@ async function bootstrap(): Promise<void> {
     callback(false);
   });
 
-  const repository = new FileArchiveRepository(path.join(app.getPath('userData'), 'archives'));
+  const archiveDirectory = path.join(app.getPath('appData'), 'wratop', 'archives');
+  const repository = new FileArchiveRepository(archiveDirectory);
   const browserGateway = new ChromeAppleEventsGateway(executeJxa);
   const archiveService = new ArchiveService(repository, browserGateway);
 
@@ -44,6 +45,6 @@ app.on('window-all-closed', () => {
 
 void bootstrap().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  dialog.showErrorBox('Could not start wratop', message);
+  dialog.showErrorBox('Could not start Wratop', message);
   app.quit();
 });

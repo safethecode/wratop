@@ -97,7 +97,7 @@ const forgeConfig: ForgeConfig = {
   packagerConfig: {
     appBundleId: 'com.wratop.app',
     asar: true,
-    executableName: 'wratop',
+    executableName: 'Wratop',
     extendInfo: {
       LSMinimumSystemVersion: '13.0',
       NSAppleEventsUsageDescription:

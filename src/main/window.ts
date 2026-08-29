@@ -7,7 +7,7 @@ export function createMainWindow(): BrowserWindow {
     minHeight: 560,
     minWidth: 420,
     show: false,
-    title: 'wratop',
+    title: 'Wratop',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 16, y: 16 },
     webPreferences: {
