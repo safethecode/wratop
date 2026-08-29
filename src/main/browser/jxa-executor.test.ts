@@ -10,4 +10,17 @@ describe('executeJxa', () => {
       '["first value","둘째 값"]',
     );
   });
+
+  it('제한 시간 안에 끝나지 않은 JXA 실행을 중단한다', async () => {
+    const executeJxaWithTimeout = executeJxa as (
+      script: string,
+      arguments_: readonly string[],
+      timeoutMs: number,
+    ) => Promise<string>;
+    const script = 'function run() { delay(0.2); return "done"; }';
+
+    await expect(executeJxaWithTimeout(script, [], 10)).rejects.toThrow(
+      'Chrome did not respond. Try again.',
+    );
+  });
 });
