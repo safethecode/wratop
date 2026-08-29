@@ -31,6 +31,43 @@ const snapshot = {
 };
 
 describe('ArchiveService', () => {
+  it('동시에 요청한 Chrome 탭 확인을 한 번만 실행한다', async () => {
+    let captureCount = 0;
+    let completeCapture = (_value: typeof snapshot): void => {
+      throw new Error('Chrome 탭 확인 요청이 필요합니다.');
+    };
+    const service = new ArchiveService(
+      {
+        delete: async () => false,
+        get: async () => null,
+        list: async () => [],
+        save: async () => undefined,
+      },
+      {
+        captureTabs: () => {
+          captureCount += 1;
+          return new Promise((resolve) => {
+            completeCapture = resolve;
+          });
+        },
+        closeTabs: async () => ({ closedTabCount: 0, skippedTabCount: 0 }),
+        restoreWindows: async () => undefined,
+      },
+    );
+
+    const firstCapture = service.captureTabs();
+    const secondCapture = service.captureTabs();
+
+    expect(captureCount).toBe(1);
+    completeCapture(snapshot);
+    await expect(Promise.all([firstCapture, secondCapture])).resolves.toEqual([snapshot, snapshot]);
+
+    const nextCapture = service.captureTabs();
+    expect(captureCount).toBe(2);
+    completeCapture(snapshot);
+    await expect(nextCapture).resolves.toEqual(snapshot);
+  });
+
   it('선택한 탭을 저장한 다음 Chrome에서 닫는다', async () => {
     const events: string[] = [];
     const savedArchives: unknown[] = [];

@@ -24,6 +24,8 @@ const defaultOptions: ArchiveServiceOptions = {
 };
 
 export class ArchiveService {
+  private captureInFlight: Promise<BrowserSnapshot> | null = null;
+
   public constructor(
     private readonly repository: ArchiveRepository,
     private readonly browserGateway: BrowserGateway,
@@ -31,7 +33,21 @@ export class ArchiveService {
   ) {}
 
   public captureTabs(): Promise<BrowserSnapshot> {
-    return this.browserGateway.captureTabs();
+    if (this.captureInFlight !== null) {
+      return this.captureInFlight;
+    }
+
+    const capture = this.browserGateway.captureTabs();
+    this.captureInFlight = capture;
+
+    const clearCapture = (): void => {
+      if (this.captureInFlight === capture) {
+        this.captureInFlight = null;
+      }
+    };
+    void capture.then(clearCapture, clearCapture);
+
+    return capture;
   }
 
   public deleteArchive(id: string): Promise<boolean> {
@@ -53,7 +69,7 @@ export class ArchiveService {
       throw new Error('Select at least one tab');
     }
 
-    const snapshot = await this.browserGateway.captureTabs();
+    const snapshot = await this.captureTabs();
     const windows = this.selectWindows(snapshot.windows, selectedIds);
 
     if (windows.length === 0) {
