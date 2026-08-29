@@ -5,7 +5,14 @@ import path from 'node:path';
 import type { TabArchive, TabArchiveSummary } from '../../shared/archive';
 import { parseTabArchive } from './parse-archive';
 
-export class FileArchiveRepository {
+export interface ArchiveRepository {
+  delete(id: string): Promise<boolean>;
+  get(id: string): Promise<TabArchive | null>;
+  list(): Promise<readonly TabArchiveSummary[]>;
+  save(archive: TabArchive): Promise<void>;
+}
+
+export class FileArchiveRepository implements ArchiveRepository {
   public constructor(private readonly directoryPath: string) {}
 
   public async delete(id: string): Promise<boolean> {
