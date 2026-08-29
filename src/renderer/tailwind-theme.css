@@ -1,0 +1,22 @@
+@import "tailwindcss/theme.css" layer(theme) theme(static);
+
+@theme {
+  --animate-*: initial;
+  --aspect-*: initial;
+  --blur-*: initial;
+  --breakpoint-*: initial;
+  --container-*: initial;
+  --default-*: initial;
+  --drop-shadow-*: initial;
+  --ease-*: initial;
+  --font-*: initial;
+  --inset-shadow-*: initial;
+  --leading-*: initial;
+  --max-width-*: initial;
+  --perspective-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --spacing: initial;
+  --text-*: initial;
+  --tracking-*: initial;
+}
