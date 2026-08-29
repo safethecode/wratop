@@ -108,10 +108,23 @@ describe('CurrentTabsPanel', () => {
     render(<CurrentTabsPanel isActive onArchiveCreated={() => undefined} />);
 
     await screen.findByText('Electron 문서');
-    fireEvent.click(screen.getByRole('button', { name: 'Reload Tabs' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh Tabs' }));
 
     expect(await screen.findByText('Electron 문서')).toBeInTheDocument();
     expect(captureTabs).toHaveBeenCalledTimes(2);
+  });
+
+  it('전체 선택 상태와 새로고침 동작을 명확하게 표시한다', async () => {
+    installDesktopApi();
+
+    render(<CurrentTabsPanel isActive onArchiveCreated={() => undefined} />);
+
+    await screen.findByText('Electron 문서');
+
+    expect(screen.getByRole('checkbox', { name: 'Select all visible tabs' })).toBeChecked();
+    expect(screen.getByText('3 of 3 selected')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Refresh Tabs' })).toHaveTextContent('Refresh');
+    expect(screen.queryByRole('button', { name: 'Clear' })).not.toBeInTheDocument();
   });
 
   it('Chrome 탭을 창별로 표시한다', async () => {
@@ -217,6 +230,9 @@ describe('CurrentTabsPanel', () => {
 
     expect(screen.getByText('New Tab')).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Select New Tab' })).not.toBeChecked();
+    expect(
+      screen.getByRole('checkbox', { name: 'Select all visible tabs' }),
+    ).toBePartiallyChecked();
   });
 
   it('Chrome 확인이 끝나기 전에는 다음 확인을 시작하지 않는다', async () => {
@@ -274,7 +290,7 @@ describe('CurrentTabsPanel', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(15_000);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Reload Tabs' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh Tabs' }));
 
     expect(screen.getByText('Loading…')).toBeInTheDocument();
 

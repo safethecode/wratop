@@ -36,6 +36,13 @@ function FeedbackMessage({ feedback }: { readonly feedback: Feedback }): React.J
 }
 
 function ReadyToolbar({ model, snapshot }: ReadyTabsViewProps): React.JSX.Element {
+  const totalTabCount = getTabIds(snapshot.windows).length;
+  const visibleTabIds = getTabIds(model.filteredWindows);
+  const selectedVisibleTabCount = visibleTabIds.filter((tabId) =>
+    model.selectedTabIds.has(tabId),
+  ).length;
+  const hasPartiallySelectedVisibleTabs = selectedVisibleTabCount > 0 && !model.allVisibleSelected;
+
   return (
     <div {...stylex.props(styles.toolbar)}>
       <input
@@ -47,29 +54,40 @@ function ReadyToolbar({ model, snapshot }: ReadyTabsViewProps): React.JSX.Elemen
         value={model.searchQuery}
       />
       <div {...stylex.props(styles.toolbarActions)}>
-        <span {...stylex.props(styles.count)}>
-          {model.selectedTabIds.size} / {getTabIds(snapshot.windows).length}
-        </span>
-        {snapshot.excludedIncognitoWindowCount > 0 ? (
-          <span {...stylex.props(styles.privateNotice)}>
-            {snapshot.excludedIncognitoWindowCount} incognito{' '}
-            {snapshot.excludedIncognitoWindowCount === 1 ? 'window' : 'windows'} excluded
-          </span>
-        ) : null}
+        <div {...stylex.props(styles.selectionStatus)}>
+          <label {...stylex.props(styles.selectionControl)}>
+            <input
+              {...stylex.props(styles.masterCheckbox)}
+              aria-label="Select all visible tabs"
+              checked={model.allVisibleSelected}
+              disabled={visibleTabIds.length === 0}
+              onChange={model.toggleVisibleTabs}
+              ref={(input) => {
+                if (input !== null) {
+                  input.indeterminate = hasPartiallySelectedVisibleTabs;
+                }
+              }}
+              title="Select all visible tabs"
+              type="checkbox"
+            />
+            <span {...stylex.props(styles.count)}>
+              {model.selectedTabIds.size} of {totalTabCount} selected
+            </span>
+          </label>
+          {snapshot.excludedIncognitoWindowCount > 0 ? (
+            <span {...stylex.props(styles.privateNotice)}>
+              {snapshot.excludedIncognitoWindowCount} incognito{' '}
+              {snapshot.excludedIncognitoWindowCount === 1 ? 'window' : 'windows'} excluded
+            </span>
+          ) : null}
+        </div>
         <button
-          {...stylex.props(styles.textButton)}
-          onClick={model.toggleVisibleTabs}
-          type="button"
-        >
-          {model.allVisibleSelected ? 'Clear' : 'Select All'}
-        </button>
-        <button
-          {...stylex.props(styles.iconButton)}
-          aria-label="Reload Tabs"
+          {...stylex.props(styles.refreshButton)}
+          aria-label="Refresh Tabs"
           onClick={model.loadTabs}
           type="button"
         >
-          ↻
+          Refresh
         </button>
       </div>
     </div>
@@ -256,26 +274,13 @@ const styles = stylex.create({
     backgroundColor: tokens.warningMuted,
     color: tokens.warning,
   },
-  iconButton: {
-    ':hover': {
-      backgroundColor: tokens.surfaceRaised,
-    },
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    borderColor: tokens.line,
-    borderRadius: '50%',
-    borderStyle: 'solid',
-    borderWidth: 1,
-    color: tokens.textSecondary,
+  masterCheckbox: {
+    accentColor: tokens.accent,
     cursor: 'pointer',
-    display: 'flex',
-    fontSize: 16,
-    height: 44,
-    justifyContent: 'center',
-    minHeight: 44,
-    minWidth: 44,
-    padding: 0,
-    width: 44,
+    flexShrink: 0,
+    height: 16,
+    margin: 0,
+    width: 16,
   },
   nameInput: {
     ':focus': {
@@ -330,6 +335,28 @@ const styles = stylex.create({
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
+  refreshButton: {
+    ':focus-visible': {
+      outlineColor: tokens.textPrimary,
+      outlineOffset: -2,
+    },
+    ':hover': {
+      backgroundColor: tokens.surfaceRaised,
+      color: tokens.textPrimary,
+    },
+    backgroundColor: 'transparent',
+    borderRadius: 7,
+    borderWidth: 0,
+    color: tokens.textSecondary,
+    cursor: 'pointer',
+    flexShrink: 0,
+    fontSize: 11,
+    fontWeight: 600,
+    minHeight: 44,
+    minWidth: 44,
+    paddingBlock: 8,
+    paddingInline: 10,
+  },
   searchInput: {
     ':focus': {
       borderColor: tokens.accent,
@@ -372,21 +399,19 @@ const styles = stylex.create({
     fontSize: 12,
     margin: 0,
   },
-  textButton: {
-    ':hover': {
-      color: tokens.textPrimary,
-    },
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    color: tokens.accentText,
+  selectionControl: {
+    alignItems: 'center',
     cursor: 'pointer',
-    fontSize: 11,
-    fontWeight: 600,
+    display: 'flex',
+    gap: 8,
     minHeight: 44,
-    minWidth: 44,
-    paddingBlock: 5,
-    paddingInline: 8,
-    whiteSpace: 'nowrap',
+    minWidth: 0,
+  },
+  selectionStatus: {
+    alignItems: 'flex-start',
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: 0,
   },
   toolbar: {
     alignItems: 'center',
