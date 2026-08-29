@@ -1,14 +1,18 @@
 import * as stylex from '@stylexjs/stylex';
+import { useCallback, useState } from 'react';
 
 import type { TabArchiveSummary } from '../../shared/archive';
+import { ArchiveLibrary } from '../features/archive-library/ArchiveLibrary';
 import { CurrentTabsPanel } from '../features/current-tabs/CurrentTabsPanel';
 import { tokens } from '../theme/tokens.stylex';
 
-function ignoreCreatedArchive(archive: TabArchiveSummary): void {
-  void archive;
-}
-
 export function App(): React.JSX.Element {
+  const [archiveRefreshKey, setArchiveRefreshKey] = useState(0);
+  const handleArchiveCreated = useCallback((archive: TabArchiveSummary): void => {
+    void archive;
+    setArchiveRefreshKey((current) => current + 1);
+  }, []);
+
   return (
     <main {...stylex.props(styles.page)}>
       <header {...stylex.props(styles.header)}>
@@ -32,7 +36,8 @@ export function App(): React.JSX.Element {
       </section>
 
       <div {...stylex.props(styles.workspace)}>
-        <CurrentTabsPanel onArchiveCreated={ignoreCreatedArchive} />
+        <CurrentTabsPanel onArchiveCreated={handleArchiveCreated} />
+        <ArchiveLibrary refreshKey={archiveRefreshKey} />
       </div>
     </main>
   );
@@ -109,6 +114,12 @@ const styles = stylex.create({
     marginBlockStart: 10,
   },
   workspace: {
+    display: 'grid',
+    gap: 16,
+    gridTemplateColumns: {
+      default: 'minmax(0, 1fr) minmax(320px, 0.48fr)',
+      '@media (max-width: 900px)': '1fr',
+    },
     marginBlockStart: 34,
   },
 });
