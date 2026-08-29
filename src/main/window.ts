@@ -2,10 +2,10 @@ import { BrowserWindow } from 'electron';
 
 export function createMainWindow(): BrowserWindow {
   const window = new BrowserWindow({
-    backgroundColor: '#020617',
+    backgroundColor: '#ffffff',
     height: 720,
-    minHeight: 620,
-    minWidth: 880,
+    minHeight: 560,
+    minWidth: 420,
     show: false,
     title: 'wratop',
     webPreferences: {
@@ -15,7 +15,7 @@ export function createMainWindow(): BrowserWindow {
       sandbox: true,
       webSecurity: true,
     },
-    width: 1080,
+    width: 512,
   });
 
   window.once('ready-to-show', () => {
