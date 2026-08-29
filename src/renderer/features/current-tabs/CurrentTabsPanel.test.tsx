@@ -86,6 +86,31 @@ describe('CurrentTabsPanel', () => {
     expect(screen.getByRole('checkbox', { name: 'Select Electron 문서' })).toBeChecked();
   });
 
+  it('탭을 불러오는 중에도 다시 요청할 수 있다', async () => {
+    const { captureTabs } = installDesktopApi();
+    let completeFirstCapture = (_value: typeof snapshot): void => {
+      throw new Error('첫 Chrome 확인 요청이 필요합니다.');
+    };
+    captureTabs
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            completeFirstCapture = resolve;
+          }),
+      )
+      .mockResolvedValueOnce(snapshot);
+
+    render(<CurrentTabsPanel isActive onArchiveCreated={() => undefined} />);
+    await act(async () => undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+    await act(async () => {
+      completeFirstCapture(snapshot);
+    });
+
+    expect(await screen.findByText('Electron 문서')).toBeInTheDocument();
+  });
+
   it('처음부터 포커스가 없으면 확인하지 않고 포커스될 때 불러온다', async () => {
     const { captureTabs, hasFocus } = installDesktopApi();
     hasFocus.mockReturnValue(false);

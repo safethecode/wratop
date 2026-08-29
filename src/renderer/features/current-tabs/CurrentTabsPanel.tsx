@@ -169,6 +169,9 @@ function CaptureBody({
       return (
         <div {...stylex.props(styles.emptyState)} aria-live="polite">
           <span {...stylex.props(styles.stateText)}>Loading…</span>
+          <button {...stylex.props(styles.secondaryButton)} onClick={model.loadTabs} type="button">
+            Retry
+          </button>
         </div>
       );
     case 'error':
