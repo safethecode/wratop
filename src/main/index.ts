@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { app, dialog, session } from 'electron';
 
+import { resolveAppAssetPath } from './app-assets';
 import { FileArchiveRepository } from './archive/archive-repository';
 import { ArchiveService } from './archive/archive-service';
 import { ChromeAppleEventsGateway } from './browser/chrome-apple-events';
@@ -17,9 +18,14 @@ let statusBar: StatusBar | null = null;
 
 async function bootstrap(): Promise<void> {
   await app.whenReady();
+  const assetRuntime = {
+    appPath: app.getAppPath(),
+    isPackaged: app.isPackaged,
+    resourcesPath: process.resourcesPath,
+  };
 
   if (!app.isPackaged && process.platform === 'darwin' && app.dock !== undefined) {
-    app.dock.setIcon(path.join(app.getAppPath(), 'assets', 'wratop-icon.png'));
+    app.dock.setIcon(resolveAppAssetPath('wratop-icon.png', assetRuntime));
   }
 
   session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => {
@@ -35,7 +41,7 @@ async function bootstrap(): Promise<void> {
   showMainWindow();
   statusBar = createStatusBar({
     captureTabs: () => archiveService.captureTabs(),
-    iconPath: path.join(app.getAppPath(), 'assets', 'wratopStatusTemplate.png'),
+    iconPath: resolveAppAssetPath('wratopStatusTemplate.png', assetRuntime),
     openWindow: () => {
       app.focus({ steal: true });
       showMainWindow();

@@ -98,6 +98,7 @@ const forgeConfig: ForgeConfig = {
     appBundleId: 'com.wratop.app',
     asar: true,
     executableName: 'Wratop',
+    extraResource: [path.resolve(__dirname, 'assets')],
     extendInfo: {
       LSMinimumSystemVersion: '13.0',
       NSAppleEventsUsageDescription:
