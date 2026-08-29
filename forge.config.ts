@@ -103,6 +103,7 @@ const forgeConfig: ForgeConfig = {
       NSAppleEventsUsageDescription:
         'Chrome automation permission is required to archive and restore tabs.',
     },
+    icon: path.resolve(__dirname, 'assets', 'wratop-icon'),
   },
   plugins: [
     new WebpackPlugin({

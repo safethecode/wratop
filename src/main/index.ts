@@ -14,6 +14,10 @@ app.enableSandbox();
 async function bootstrap(): Promise<void> {
   await app.whenReady();
 
+  if (!app.isPackaged && process.platform === 'darwin' && app.dock !== undefined) {
+    app.dock.setIcon(path.join(app.getAppPath(), 'assets', 'wratop-icon.png'));
+  }
+
   session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => {
     callback(false);
   });
