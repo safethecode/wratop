@@ -15,6 +15,7 @@ export const rendererConfig = (
   plugins: [
     stylex.webpack({
       dev: mode === 'development',
+      treeshakeCompensation: true,
       useCSSLayers: {
         before: ['theme', 'base'],
         prefix: 'stylex',
