@@ -100,6 +100,7 @@ const forgeConfig: ForgeConfig = {
     executableName: 'wratop',
     extendInfo: {
       LSMinimumSystemVersion: '13.0',
+      NSAppleEventsUsageDescription: 'Chrome 탭을 보관하고 복원하기 위해 자동화 권한이 필요합니다.',
     },
   },
   plugins: [
