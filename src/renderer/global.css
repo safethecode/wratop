@@ -6,7 +6,7 @@
   }
 
   :root {
-    color-scheme: dark;
+    color-scheme: light;
     font-family:
       Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
     font-synthesis: none;
@@ -14,17 +14,11 @@
   }
 
   html {
-    background: var(--color-slate-950);
+    background: var(--color-white);
   }
 
   body {
-    background:
-      radial-gradient(
-        circle at 84% 8%,
-        color-mix(in oklab, var(--color-sky-500) 12%, transparent),
-        transparent 32%
-      ),
-      var(--color-slate-950);
+    background: var(--color-white);
     margin: 0;
     min-width: 320px;
   }
@@ -34,5 +28,10 @@
   textarea,
   select {
     font: inherit;
+  }
+
+  :where(button, input, textarea, select, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-blue-600);
+    outline-offset: 2px;
   }
 }

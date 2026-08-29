@@ -67,6 +67,7 @@ describe('ArchiveLibrary', () => {
     expect(await screen.findByText('Electron 문서')).toBeInTheDocument();
     expect(screen.getByText('StyleX 문서')).toBeInTheDocument();
     expect(getArchive).toHaveBeenCalledWith(archiveId);
+    expect(screen.queryByRole('button', { name: /개발 자료/ })).not.toBeInTheDocument();
   });
 
   it('보관함에서 선택한 탭만 복원한다', async () => {
@@ -101,6 +102,6 @@ describe('ArchiveLibrary', () => {
       expect(deleteArchive).toHaveBeenCalledWith(archiveId);
     });
     expect(listArchives).toHaveBeenCalledTimes(2);
-    expect(await screen.findByText('아직 보관한 탭이 없습니다')).toBeInTheDocument();
+    expect(await screen.findByText('보관함이 비어 있습니다')).toBeInTheDocument();
   });
 });

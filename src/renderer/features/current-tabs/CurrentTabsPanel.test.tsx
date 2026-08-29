@@ -75,22 +75,48 @@ describe('CurrentTabsPanel', () => {
     render(<CurrentTabsPanel onArchiveCreated={() => undefined} />);
 
     expect(captureTabs).not.toHaveBeenCalled();
-    expect(screen.getByText('Chrome 탭을 불러와 정리해 보세요')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '탭 불러오기' })).toBeInTheDocument();
   });
 
   it('Chrome 탭을 창별로 표시한다', async () => {
     installDesktopApi();
     render(<CurrentTabsPanel onArchiveCreated={() => undefined} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Chrome 탭 불러오기' }));
+    fireEvent.click(screen.getByRole('button', { name: '탭 불러오기' }));
 
     expect(await screen.findByText('Electron 문서')).toBeInTheDocument();
     expect(screen.getByText('StyleX 문서')).toBeInTheDocument();
     expect(screen.getByText('Electron API')).toBeInTheDocument();
     expect(screen.getByText('창 1')).toBeInTheDocument();
     expect(screen.getByText('창 2')).toBeInTheDocument();
-    expect(screen.getByText('시크릿 창 1개는 목록에서 제외했습니다')).toBeInTheDocument();
-    expect(screen.getAllByText('같은 주소 2개')).toHaveLength(2);
+    expect(screen.getByText('시크릿 창 1개 제외')).toBeInTheDocument();
+  });
+
+  it('제목 없는 탭에 읽을 수 있는 선택 이름을 붙인다', async () => {
+    const { captureTabs } = installDesktopApi();
+    captureTabs.mockResolvedValueOnce({
+      ...snapshot,
+      windows: [
+        {
+          id: 'window-untitled',
+          position: 0,
+          tabs: [
+            {
+              active: true,
+              id: 'tab-untitled',
+              position: 0,
+              title: '',
+              url: 'https://www.electronjs.org/docs',
+            },
+          ],
+        },
+      ],
+    });
+    render(<CurrentTabsPanel onArchiveCreated={() => undefined} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '탭 불러오기' }));
+
+    expect(await screen.findByRole('checkbox', { name: '제목 없는 탭 선택' })).toBeInTheDocument();
   });
 
   it('선택한 탭만 이름을 붙여 보관한다', async () => {
@@ -98,11 +124,11 @@ describe('CurrentTabsPanel', () => {
     const { archiveTabs } = installDesktopApi();
     render(<CurrentTabsPanel onArchiveCreated={onArchiveCreated} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Chrome 탭 불러오기' }));
+    fireEvent.click(screen.getByRole('button', { name: '탭 불러오기' }));
     await screen.findByText('Electron 문서');
     fireEvent.click(screen.getByRole('checkbox', { name: 'StyleX 문서 선택' }));
     fireEvent.change(screen.getByLabelText('보관함 이름'), { target: { value: '개발 자료' } });
-    fireEvent.click(screen.getByRole('button', { name: '보관만' }));
+    fireEvent.click(screen.getByRole('button', { name: '보관' }));
 
     await waitFor(() => {
       expect(archiveTabs).toHaveBeenCalledWith({

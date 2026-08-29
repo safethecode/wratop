@@ -4,7 +4,6 @@ import type { BrowserWindow } from '../../../shared/archive';
 import { tokens } from '../../theme/tokens.stylex';
 
 interface CurrentTabWindowProps {
-  readonly duplicateUrlCounts: ReadonlyMap<string, number>;
   readonly onToggleTab: (tabId: string) => void;
   readonly selectedTabIds: ReadonlySet<string>;
   readonly window: BrowserWindow;
@@ -13,14 +12,14 @@ interface CurrentTabWindowProps {
 
 function getHost(url: string): string {
   try {
-    return new URL(url).hostname || new URL(url).protocol;
+    const parsedUrl = new URL(url);
+    return parsedUrl.hostname || parsedUrl.protocol;
   } catch {
     return url;
   }
 }
 
 export function CurrentTabWindow({
-  duplicateUrlCounts,
   onToggleTab,
   selectedTabIds,
   window,
@@ -32,32 +31,29 @@ export function CurrentTabWindow({
         <h3 {...stylex.props(styles.windowTitle)} id={`window-${window.id}`}>
           창 {windowNumber}
         </h3>
-        <span {...stylex.props(styles.windowCount)}>{window.tabs.length}개 탭</span>
+        <span {...stylex.props(styles.windowCount)}>{window.tabs.length}</span>
       </header>
 
       <ul {...stylex.props(styles.tabList)}>
         {window.tabs.map((tab) => {
-          const duplicateCount = duplicateUrlCounts.get(tab.url) ?? 0;
+          const title = tab.title || '제목 없는 탭';
 
           return (
             <li {...stylex.props(styles.tabRow)} key={tab.id}>
               <label {...stylex.props(styles.tabLabel)}>
                 <input
                   {...stylex.props(styles.checkbox)}
-                  aria-label={`${tab.title} 선택`}
+                  aria-label={`${title} 선택`}
                   checked={selectedTabIds.has(tab.id)}
                   onChange={() => onToggleTab(tab.id)}
                   type="checkbox"
                 />
                 <span {...stylex.props(styles.tabCopy)}>
                   <span {...stylex.props(styles.tabTitleRow)}>
-                    <span {...stylex.props(styles.tabTitle)}>{tab.title || '제목 없는 탭'}</span>
-                    {tab.active ? <span {...stylex.props(styles.activeBadge)}>현재 탭</span> : null}
-                    {duplicateCount > 1 ? (
-                      <span {...stylex.props(styles.duplicateBadge)}>
-                        같은 주소 {duplicateCount}개
-                      </span>
+                    {tab.active ? (
+                      <span {...stylex.props(styles.activeDot)} aria-hidden="true" />
                     ) : null}
+                    <span {...stylex.props(styles.tabTitle)}>{title}</span>
                   </span>
                   <span {...stylex.props(styles.tabUrl)} title={tab.url}>
                     {getHost(tab.url)}
@@ -73,15 +69,12 @@ export function CurrentTabWindow({
 }
 
 const styles = stylex.create({
-  activeBadge: {
-    backgroundColor: tokens.accentMuted,
-    borderRadius: 999,
-    color: tokens.accent,
+  activeDot: {
+    backgroundColor: tokens.accent,
+    borderRadius: '50%',
     flexShrink: 0,
-    fontSize: 10,
-    fontWeight: 650,
-    paddingBlock: 3,
-    paddingInline: 7,
+    height: 5,
+    width: 5,
   },
   checkbox: {
     accentColor: tokens.accent,
@@ -90,29 +83,20 @@ const styles = stylex.create({
     margin: 0,
     width: 16,
   },
-  duplicateBadge: {
-    backgroundColor: tokens.warningMuted,
-    borderRadius: 999,
-    color: tokens.warning,
-    flexShrink: 0,
-    fontSize: 10,
-    fontWeight: 650,
-    paddingBlock: 3,
-    paddingInline: 7,
-  },
   tabCopy: {
     display: 'grid',
-    gap: 5,
+    gap: 4,
     minWidth: 0,
   },
   tabLabel: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     cursor: 'pointer',
     display: 'grid',
-    gap: 12,
+    gap: 13,
     gridTemplateColumns: '16px minmax(0, 1fr)',
-    paddingBlock: 13,
-    paddingInline: 15,
+    minHeight: 60,
+    paddingBlock: 9,
+    paddingInline: 20,
   },
   tabList: {
     listStyle: 'none',
@@ -120,6 +104,9 @@ const styles = stylex.create({
     padding: 0,
   },
   tabRow: {
+    ':hover': {
+      backgroundColor: tokens.surfaceRaised,
+    },
     borderBlockStartColor: tokens.line,
     borderBlockStartStyle: 'solid',
     borderBlockStartWidth: 1,
@@ -127,7 +114,7 @@ const styles = stylex.create({
   tabTitle: {
     color: tokens.textPrimary,
     fontSize: 13,
-    fontWeight: 540,
+    fontWeight: 500,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -140,8 +127,7 @@ const styles = stylex.create({
   },
   tabUrl: {
     color: tokens.textMuted,
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-    fontSize: 10,
+    fontSize: 11,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -152,23 +138,22 @@ const styles = stylex.create({
   },
   windowGroup: {
     backgroundColor: tokens.surface,
-    borderColor: tokens.line,
-    borderRadius: 15,
-    borderStyle: 'solid',
-    borderWidth: 1,
-    overflow: 'hidden',
   },
   windowHeader: {
     alignItems: 'center',
+    backgroundColor: tokens.surfaceRaised,
+    borderBlockStartColor: tokens.line,
+    borderBlockStartStyle: 'solid',
+    borderBlockStartWidth: 1,
     display: 'flex',
     justifyContent: 'space-between',
-    paddingBlock: 11,
-    paddingInline: 15,
+    minHeight: 36,
+    paddingInline: 20,
   },
   windowTitle: {
     color: tokens.textSecondary,
-    fontSize: 12,
-    fontWeight: 650,
+    fontSize: 11,
+    fontWeight: 600,
     margin: 0,
   },
 });

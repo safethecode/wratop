@@ -26,7 +26,6 @@ export interface CurrentTabsModel {
   readonly allVisibleSelected: boolean;
   readonly archiveSelectedTabs: (closeAfterSave: boolean) => Promise<void>;
   readonly captureState: CaptureState;
-  readonly duplicateUrlCounts: ReadonlyMap<string, number>;
   readonly feedback: Feedback | null;
   readonly filteredWindows: readonly BrowserWindow[];
   readonly isSaving: boolean;
@@ -47,18 +46,6 @@ export function getTabIds(windows: readonly BrowserWindow[]): readonly string[] 
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다';
-}
-
-function createDuplicateUrlCounts(snapshot: BrowserSnapshot): ReadonlyMap<string, number> {
-  const counts = new Map<string, number>();
-
-  for (const window of snapshot.windows) {
-    for (const tab of window.tabs) {
-      counts.set(tab.url, (counts.get(tab.url) ?? 0) + 1);
-    }
-  }
-
-  return counts;
 }
 
 function filterWindows(
@@ -129,10 +116,6 @@ export function useCurrentTabs({ onArchiveCreated }: UseCurrentTabsOptions): Cur
   const filteredWindows = useMemo(
     () => filterWindows(snapshot?.windows ?? [], deferredSearchQuery),
     [deferredSearchQuery, snapshot],
-  );
-  const duplicateUrlCounts = useMemo(
-    () => (snapshot === null ? new Map<string, number>() : createDuplicateUrlCounts(snapshot)),
-    [snapshot],
   );
   const visibleTabIds = getTabIds(filteredWindows);
   const allVisibleSelected =
@@ -219,7 +202,6 @@ export function useCurrentTabs({ onArchiveCreated }: UseCurrentTabsOptions): Cur
     allVisibleSelected,
     archiveSelectedTabs,
     captureState,
-    duplicateUrlCounts,
     feedback,
     filteredWindows,
     isSaving,

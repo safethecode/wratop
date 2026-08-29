@@ -27,27 +27,34 @@ export function ArchiveWindowGroup({
 }: ArchiveWindowGroupProps): React.JSX.Element {
   return (
     <section {...stylex.props(styles.group)} aria-labelledby={`archive-window-${window.id}`}>
-      <h4 {...stylex.props(styles.windowTitle)} id={`archive-window-${window.id}`}>
-        창 {windowNumber} · {window.tabs.length}개
-      </h4>
+      <header {...stylex.props(styles.windowHeader)}>
+        <h4 {...stylex.props(styles.windowTitle)} id={`archive-window-${window.id}`}>
+          창 {windowNumber}
+        </h4>
+        <span {...stylex.props(styles.windowCount)}>{window.tabs.length}</span>
+      </header>
       <ul {...stylex.props(styles.tabList)}>
-        {window.tabs.map((tab) => (
-          <li {...stylex.props(styles.tabRow)} key={tab.id}>
-            <label {...stylex.props(styles.tabLabel)}>
-              <input
-                {...stylex.props(styles.checkbox)}
-                aria-label={`${tab.title} 선택`}
-                checked={selectedTabIds.has(tab.id)}
-                onChange={() => onToggleTab(tab.id)}
-                type="checkbox"
-              />
-              <span {...stylex.props(styles.tabCopy)}>
-                <span {...stylex.props(styles.tabTitle)}>{tab.title || '제목 없는 탭'}</span>
-                <span {...stylex.props(styles.tabHost)}>{getHost(tab.url)}</span>
-              </span>
-            </label>
-          </li>
-        ))}
+        {window.tabs.map((tab) => {
+          const title = tab.title || '제목 없는 탭';
+
+          return (
+            <li {...stylex.props(styles.tabRow)} key={tab.id}>
+              <label {...stylex.props(styles.tabLabel)}>
+                <input
+                  {...stylex.props(styles.checkbox)}
+                  aria-label={`${title} 선택`}
+                  checked={selectedTabIds.has(tab.id)}
+                  onChange={() => onToggleTab(tab.id)}
+                  type="checkbox"
+                />
+                <span {...stylex.props(styles.tabCopy)}>
+                  <span {...stylex.props(styles.tabTitle)}>{title}</span>
+                  <span {...stylex.props(styles.tabHost)}>{getHost(tab.url)}</span>
+                </span>
+              </label>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
@@ -57,17 +64,12 @@ const styles = stylex.create({
   checkbox: {
     accentColor: tokens.accent,
     flexShrink: 0,
-    height: 15,
+    height: 16,
     margin: 0,
-    width: 15,
+    width: 16,
   },
   group: {
-    backgroundColor: tokens.canvas,
-    borderColor: tokens.line,
-    borderRadius: 12,
-    borderStyle: 'solid',
-    borderWidth: 1,
-    overflow: 'hidden',
+    backgroundColor: tokens.surface,
   },
   tabCopy: {
     display: 'grid',
@@ -76,20 +78,20 @@ const styles = stylex.create({
   },
   tabHost: {
     color: tokens.textMuted,
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-    fontSize: 9,
+    fontSize: 11,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
   tabLabel: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     cursor: 'pointer',
     display: 'grid',
-    gap: 10,
-    gridTemplateColumns: '15px minmax(0, 1fr)',
-    paddingBlock: 11,
-    paddingInline: 12,
+    gap: 13,
+    gridTemplateColumns: '16px minmax(0, 1fr)',
+    minHeight: 60,
+    paddingBlock: 9,
+    paddingInline: 20,
   },
   tabList: {
     listStyle: 'none',
@@ -97,23 +99,40 @@ const styles = stylex.create({
     padding: 0,
   },
   tabRow: {
+    ':hover': {
+      backgroundColor: tokens.surfaceRaised,
+    },
     borderBlockStartColor: tokens.line,
     borderBlockStartStyle: 'solid',
     borderBlockStartWidth: 1,
   },
   tabTitle: {
-    color: tokens.textSecondary,
-    fontSize: 11,
+    color: tokens.textPrimary,
+    fontSize: 13,
+    fontWeight: 500,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
-  windowTitle: {
+  windowCount: {
     color: tokens.textMuted,
-    fontSize: 10,
-    fontWeight: 650,
+    fontSize: 11,
+  },
+  windowHeader: {
+    alignItems: 'center',
+    backgroundColor: tokens.surfaceRaised,
+    borderBlockStartColor: tokens.line,
+    borderBlockStartStyle: 'solid',
+    borderBlockStartWidth: 1,
+    display: 'flex',
+    justifyContent: 'space-between',
+    minHeight: 36,
+    paddingInline: 20,
+  },
+  windowTitle: {
+    color: tokens.textSecondary,
+    fontSize: 11,
+    fontWeight: 600,
     margin: 0,
-    paddingBlock: 9,
-    paddingInline: 12,
   },
 });

@@ -3,25 +3,21 @@ import * as stylex from '@stylexjs/stylex';
 import type { TabArchive, TabArchiveSummary } from '../../../shared/archive';
 import { tokens } from '../../theme/tokens.stylex';
 import { ArchiveWindowGroup } from './ArchiveWindowGroup';
-import type {
-  ArchiveDetailState,
-  ArchiveLibraryModel,
-  ArchiveListState,
-} from './use-archive-library';
+import type { ArchiveLibraryModel, ArchiveListState } from './use-archive-library';
 import { useArchiveLibrary } from './use-archive-library';
 
 interface ArchiveLibraryProps {
   readonly refreshKey: number;
 }
 
-const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
-
 function formatDate(value: string): string {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
 }
 
 function ArchiveSummaryButton({
@@ -32,19 +28,21 @@ function ArchiveSummaryButton({
   readonly onOpen: (archiveId: string) => void;
 }): React.JSX.Element {
   return (
-    <li>
+    <li {...stylex.props(styles.archiveRow)}>
       <button
         {...stylex.props(styles.archiveButton)}
         onClick={() => onOpen(archive.id)}
         type="button"
       >
-        <span {...stylex.props(styles.archiveName)}>{archive.name}</span>
-        <span {...stylex.props(styles.archiveMeta)}>
-          {archive.tabCount}개 탭 · {archive.windowCount}개 창
+        <span {...stylex.props(styles.archiveCopy)}>
+          <span {...stylex.props(styles.archiveName)}>{archive.name}</span>
+          <span {...stylex.props(styles.archiveMeta)}>
+            {formatDate(archive.createdAt)} · {archive.tabCount}개 · 창 {archive.windowCount}개
+          </span>
         </span>
-        <time {...stylex.props(styles.archiveDate)} dateTime={archive.createdAt}>
-          {formatDate(archive.createdAt)}
-        </time>
+        <span {...stylex.props(styles.chevron)} aria-hidden="true">
+          ›
+        </span>
       </button>
     </li>
   );
@@ -59,7 +57,7 @@ function ArchiveList({
 }): React.JSX.Element {
   switch (state.status) {
     case 'loading':
-      return <p {...stylex.props(styles.stateText)}>보관함을 불러오는 중입니다</p>;
+      return <p {...stylex.props(styles.stateText)}>불러오는 중</p>;
     case 'error':
       return (
         <p {...stylex.props(styles.errorText)} role="alert">
@@ -68,7 +66,7 @@ function ArchiveList({
       );
     case 'ready':
       return state.archives.length === 0 ? (
-        <p {...stylex.props(styles.stateText)}>아직 보관한 탭이 없습니다</p>
+        <p {...stylex.props(styles.stateText)}>보관함이 비어 있습니다</p>
       ) : (
         <ul {...stylex.props(styles.archiveList)}>
           {state.archives.map((archive) => (
@@ -90,28 +88,26 @@ function ArchiveDetails({
   const allSelected = totalTabCount > 0 && model.selectedTabIds.size === totalTabCount;
 
   return (
-    <section {...stylex.props(styles.details)} aria-labelledby="archive-detail-title">
+    <section {...stylex.props(styles.details)} aria-label={archive.name}>
       <header {...stylex.props(styles.detailHeader)}>
-        <div {...stylex.props(styles.detailTitleGroup)}>
+        <div {...stylex.props(styles.detailHeading)}>
           <button
-            {...stylex.props(styles.closeButton)}
-            aria-label="보관함 상세 닫기"
+            {...stylex.props(styles.backButton)}
+            aria-label="보관함 목록으로 돌아가기"
             onClick={model.closeArchive}
             type="button"
           >
-            ←
+            ‹
           </button>
-          <div {...stylex.props(styles.detailHeadingCopy)}>
-            <h3 {...stylex.props(styles.detailTitle)} id="archive-detail-title">
-              {archive.name}
-            </h3>
+          <div {...stylex.props(styles.detailCopy)}>
+            <h2 {...stylex.props(styles.detailTitle)}>{archive.name}</h2>
             <span {...stylex.props(styles.archiveMeta)}>
-              {totalTabCount}개 탭 · {archive.windows.length}개 창
+              {formatDate(archive.createdAt)} · {totalTabCount}개 · 창 {archive.windows.length}개
             </span>
           </div>
         </div>
         <button {...stylex.props(styles.textButton)} onClick={model.toggleAllTabs} type="button">
-          {allSelected ? '선택 해제' : '모두 선택'}
+          {allSelected ? '선택 해제' : '전체 선택'}
         </button>
       </header>
 
@@ -126,6 +122,12 @@ function ArchiveDetails({
           />
         ))}
       </div>
+
+      {model.feedback === null ? null : (
+        <p {...stylex.props(styles.feedback)} aria-live="polite">
+          {model.feedback}
+        </p>
+      )}
 
       <div {...stylex.props(styles.detailActions)}>
         <button
@@ -145,43 +147,33 @@ function ArchiveDetails({
           {model.isBusy ? '처리 중' : '선택한 탭 복원'}
         </button>
       </div>
-
-      {model.feedback === null ? null : (
-        <p {...stylex.props(styles.feedback)} aria-live="polite">
-          {model.feedback}
-        </p>
-      )}
     </section>
   );
 }
 
-function DetailBody({
-  model,
-  state,
-}: {
-  readonly model: ArchiveLibraryModel;
-  readonly state: ArchiveDetailState;
-}): React.JSX.Element {
-  switch (state.status) {
+function ArchiveLibraryBody({ model }: { readonly model: ArchiveLibraryModel }): React.JSX.Element {
+  switch (model.detailState.status) {
     case 'closed':
-      return (
-        <div {...stylex.props(styles.detailEmpty)}>
-          <span {...stylex.props(styles.detailEmptyMark)} aria-hidden="true">
-            ◫
-          </span>
-          <p>보관함을 선택하면 탭을 확인하고 복원할 수 있습니다</p>
-        </div>
-      );
+      return <ArchiveList onOpen={model.openArchive} state={model.listState} />;
     case 'loading':
-      return <p {...stylex.props(styles.stateText)}>탭을 불러오는 중입니다</p>;
+      return <p {...stylex.props(styles.stateText)}>불러오는 중</p>;
     case 'error':
       return (
-        <p {...stylex.props(styles.errorText)} role="alert">
-          {state.message}
-        </p>
+        <div {...stylex.props(styles.stateGroup)}>
+          <p {...stylex.props(styles.errorText)} role="alert">
+            {model.detailState.message}
+          </p>
+          <button
+            {...stylex.props(styles.secondaryButton)}
+            onClick={model.closeArchive}
+            type="button"
+          >
+            돌아가기
+          </button>
+        </div>
       );
     case 'ready':
-      return <ArchiveDetails archive={state.archive} model={model} />;
+      return <ArchiveDetails archive={model.detailState.archive} model={model} />;
   }
 }
 
@@ -189,249 +181,253 @@ export function ArchiveLibrary({ refreshKey }: ArchiveLibraryProps): React.JSX.E
   const model = useArchiveLibrary(refreshKey);
 
   return (
-    <aside {...stylex.props(styles.panel)} aria-labelledby="archive-library-title">
-      <header {...stylex.props(styles.panelHeader)}>
-        <div>
-          <p {...stylex.props(styles.eyebrow)}>SAVED LOCALLY</p>
-          <h2 {...stylex.props(styles.title)} id="archive-library-title">
-            보관함
-          </h2>
-        </div>
-      </header>
-
-      <ArchiveList onOpen={model.openArchive} state={model.listState} />
-      <div {...stylex.props(styles.divider)} />
-      <DetailBody model={model} state={model.detailState} />
+    <aside {...stylex.props(styles.panel)} aria-label="보관함">
+      <ArchiveLibraryBody model={model} />
     </aside>
   );
 }
 
 const styles = stylex.create({
   archiveButton: {
+    ':focus-visible': {
+      outlineOffset: -3,
+    },
     ':hover': {
       backgroundColor: tokens.surfaceRaised,
-      borderColor: tokens.lineStrong,
     },
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
-    borderRadius: 12,
-    borderStyle: 'solid',
-    borderWidth: 1,
+    alignItems: 'center',
+    backgroundColor: tokens.surface,
+    borderWidth: 0,
     color: tokens.textPrimary,
     cursor: 'pointer',
-    display: 'grid',
-    gap: 5,
-    padding: 12,
+    display: 'flex',
+    gap: 16,
+    justifyContent: 'space-between',
+    minHeight: 68,
+    paddingBlock: 10,
+    paddingInline: 20,
     textAlign: 'start',
     width: '100%',
   },
-  archiveDate: {
-    color: tokens.textMuted,
-    fontSize: 9,
-    marginBlockStart: 2,
-  },
-  archiveList: {
+  archiveCopy: {
     display: 'grid',
     gap: 5,
+    minWidth: 0,
+  },
+  archiveList: {
     listStyle: 'none',
-    marginBlockEnd: 0,
-    marginBlockStart: 18,
-    maxHeight: 240,
-    overflowY: 'auto',
+    margin: 0,
     padding: 0,
   },
   archiveMeta: {
     color: tokens.textMuted,
-    fontSize: 10,
-  },
-  archiveName: {
-    fontSize: 12,
-    fontWeight: 650,
+    fontSize: 11,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
-  closeButton: {
+  archiveName: {
+    fontSize: 13,
+    fontWeight: 600,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  archiveRow: {
+    borderBlockEndColor: tokens.line,
+    borderBlockEndStyle: 'solid',
+    borderBlockEndWidth: 1,
+  },
+  backButton: {
     alignItems: 'center',
-    backgroundColor: tokens.surfaceRaised,
-    borderColor: tokens.line,
-    borderRadius: 9,
-    borderStyle: 'solid',
-    borderWidth: 1,
-    color: tokens.textSecondary,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    color: tokens.textPrimary,
     cursor: 'pointer',
     display: 'flex',
-    flexShrink: 0,
-    height: 30,
+    fontSize: 27,
+    height: 44,
     justifyContent: 'center',
     padding: 0,
-    width: 30,
+    width: 44,
+  },
+  chevron: {
+    color: tokens.textMuted,
+    flexShrink: 0,
+    fontSize: 23,
   },
   deleteButton: {
     ':disabled': {
       cursor: 'not-allowed',
-      opacity: 0.45,
+      opacity: 0.4,
     },
-    backgroundColor: 'transparent',
-    borderColor: tokens.danger,
-    borderRadius: 9,
+    ':hover': {
+      backgroundColor: tokens.dangerMuted,
+    },
+    backgroundColor: tokens.surface,
+    borderColor: tokens.lineStrong,
+    borderRadius: 7,
     borderStyle: 'solid',
     borderWidth: 1,
     color: tokens.danger,
     cursor: 'pointer',
-    fontSize: 10,
-    fontWeight: 650,
+    fontSize: 12,
+    fontWeight: 600,
+    minHeight: 44,
+    minWidth: 44,
     paddingBlock: 9,
-    paddingInline: 11,
+    paddingInline: 13,
   },
   detailActions: {
     alignItems: 'center',
+    backgroundColor: tokens.surface,
+    borderBlockStartColor: tokens.line,
+    borderBlockStartStyle: 'solid',
+    borderBlockStartWidth: 1,
     display: 'flex',
-    gap: 8,
+    flexShrink: 0,
+    gap: 12,
     justifyContent: 'space-between',
-    marginBlockStart: 12,
+    minHeight: 72,
+    paddingInline: 20,
   },
-  detailEmpty: {
-    alignItems: 'center',
-    color: tokens.textMuted,
-    display: 'flex',
-    flexDirection: 'column',
-    fontSize: 11,
-    gap: 9,
-    lineHeight: 1.6,
-    minHeight: 190,
-    padding: 28,
-    textAlign: 'center',
-  },
-  detailEmptyMark: {
-    color: tokens.lineStrong,
-    fontSize: 32,
-  },
-  detailHeader: {
-    alignItems: 'center',
-    display: 'flex',
-    gap: 8,
-    justifyContent: 'space-between',
-  },
-  detailHeadingCopy: {
+  detailCopy: {
     display: 'grid',
     gap: 4,
     minWidth: 0,
   },
+  detailHeader: {
+    alignItems: 'center',
+    borderBlockEndColor: tokens.line,
+    borderBlockEndStyle: 'solid',
+    borderBlockEndWidth: 1,
+    display: 'flex',
+    flexShrink: 0,
+    gap: 12,
+    justifyContent: 'space-between',
+    minHeight: 68,
+    paddingInline: 20,
+  },
+  detailHeading: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: 1,
+    gap: 12,
+    minWidth: 0,
+  },
   details: {
-    marginBlockStart: 16,
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    minHeight: 0,
   },
   detailTitle: {
     color: tokens.textPrimary,
-    fontSize: 13,
+    fontSize: 14,
+    fontWeight: 650,
     margin: 0,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
-  detailTitleGroup: {
-    alignItems: 'center',
-    display: 'flex',
-    gap: 10,
-    minWidth: 0,
-  },
   detailWindows: {
     contentVisibility: 'auto',
-    display: 'grid',
-    gap: 8,
-    marginBlockStart: 13,
-    maxHeight: 'min(35vh, 360px)',
+    flex: 1,
+    minHeight: 0,
+    overscrollBehaviorY: 'contain',
     overflowY: 'auto',
-    paddingInlineEnd: 3,
-  },
-  divider: {
-    backgroundColor: tokens.line,
-    height: 1,
-    marginBlockStart: 18,
   },
   errorText: {
     color: tokens.danger,
-    fontSize: 11,
-    lineHeight: 1.55,
-    marginBlockEnd: 0,
-    marginBlockStart: 18,
-  },
-  eyebrow: {
-    color: tokens.positive,
-    fontSize: 10,
-    fontWeight: 700,
-    letterSpacing: '0.14em',
+    fontSize: 12,
     margin: 0,
   },
   feedback: {
     backgroundColor: tokens.positiveMuted,
-    borderRadius: 10,
+    borderBlockStartColor: tokens.line,
+    borderBlockStartStyle: 'solid',
+    borderBlockStartWidth: 1,
     color: tokens.positive,
-    fontSize: 10,
-    lineHeight: 1.5,
-    marginBlockEnd: 0,
-    marginBlockStart: 10,
-    padding: 10,
+    flexShrink: 0,
+    fontSize: 11,
+    margin: 0,
+    paddingBlock: 9,
+    paddingInline: 20,
   },
   panel: {
-    backgroundColor: tokens.surfaceMuted,
-    borderColor: tokens.line,
-    borderRadius: 22,
-    borderStyle: 'solid',
-    borderWidth: 1,
-    minWidth: 0,
-    padding: 22,
-  },
-  panelHeader: {
-    alignItems: 'center',
-    display: 'flex',
-    justifyContent: 'space-between',
+    height: '100%',
+    minHeight: 0,
+    overflowY: 'auto',
   },
   primaryButton: {
     ':disabled': {
       cursor: 'not-allowed',
-      opacity: 0.45,
+      opacity: 0.4,
     },
     ':hover': {
       backgroundColor: tokens.accentStrong,
     },
     backgroundColor: tokens.accent,
     borderColor: tokens.accent,
-    borderRadius: 9,
+    borderRadius: 7,
     borderStyle: 'solid',
     borderWidth: 1,
     color: tokens.canvas,
     cursor: 'pointer',
-    fontSize: 10,
-    fontWeight: 700,
+    fontSize: 12,
+    fontWeight: 600,
+    minHeight: 44,
+    minWidth: 44,
     paddingBlock: 9,
-    paddingInline: 12,
+    paddingInline: 13,
+  },
+  secondaryButton: {
+    ':hover': {
+      backgroundColor: tokens.surfaceRaised,
+    },
+    backgroundColor: tokens.surface,
+    borderColor: tokens.lineStrong,
+    borderRadius: 7,
+    borderStyle: 'solid',
+    borderWidth: 1,
+    color: tokens.textSecondary,
+    cursor: 'pointer',
+    fontSize: 12,
+    fontWeight: 600,
+    minHeight: 44,
+    minWidth: 44,
+    paddingBlock: 9,
+    paddingInline: 13,
+  },
+  stateGroup: {
+    alignItems: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+    justifyContent: 'center',
+    minHeight: 300,
   },
   stateText: {
     color: tokens.textMuted,
-    fontSize: 11,
-    lineHeight: 1.55,
-    marginBlockEnd: 0,
-    marginBlockStart: 18,
-    paddingBlock: 14,
+    fontSize: 12,
+    margin: 0,
+    paddingBlock: 90,
     textAlign: 'center',
   },
   textButton: {
+    ':hover': {
+      color: tokens.textPrimary,
+    },
     backgroundColor: 'transparent',
     borderWidth: 0,
     color: tokens.accent,
     cursor: 'pointer',
     flexShrink: 0,
-    fontSize: 10,
-    fontWeight: 650,
-    padding: 7,
-  },
-  title: {
-    color: tokens.textPrimary,
-    fontSize: 25,
-    fontWeight: 650,
-    letterSpacing: '-0.04em',
-    marginBlockEnd: 0,
-    marginBlockStart: 6,
+    fontSize: 11,
+    fontWeight: 600,
+    minHeight: 44,
+    minWidth: 44,
+    paddingBlock: 5,
+    paddingInline: 8,
   },
 });
