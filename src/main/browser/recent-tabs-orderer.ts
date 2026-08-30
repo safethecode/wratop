@@ -1,4 +1,5 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { BrowserSnapshot, BrowserTab } from '../../shared/archive';
@@ -35,6 +36,7 @@ function parseFirstSeenAtByTabId(serialized: string): Map<string, number> {
 
 export class RecentTabsOrderer {
   private firstSeenAtByTabId: Map<string, number> | null = null;
+  private hasUnsavedChanges = false;
 
   public constructor(
     private readonly metadataPath: string,
@@ -66,7 +68,11 @@ export class RecentTabsOrderer {
     }
 
     if (hasChanges) {
-      await this.saveFirstSeenAtByTabId(firstSeenAtByTabId);
+      this.hasUnsavedChanges = true;
+    }
+
+    if (this.hasUnsavedChanges) {
+      this.hasUnsavedChanges = !(await this.saveFirstSeenAtByTabId(firstSeenAtByTabId));
     }
 
     return {
@@ -112,20 +118,29 @@ export class RecentTabsOrderer {
 
   private async saveFirstSeenAtByTabId(
     firstSeenAtByTabId: ReadonlyMap<string, number>,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const storedRecentTabs: StoredRecentTabs = {
       firstSeenAtByTabId: Object.fromEntries(firstSeenAtByTabId),
       version: 1,
     };
+    const temporaryPath = `${this.metadataPath}.${randomUUID()}.tmp`;
 
     try {
       await mkdir(path.dirname(this.metadataPath), { recursive: true });
-      await writeFile(this.metadataPath, `${JSON.stringify(storedRecentTabs, null, 2)}\n`, {
+      await writeFile(temporaryPath, `${JSON.stringify(storedRecentTabs, null, 2)}\n`, {
         encoding: 'utf8',
         flush: true,
       });
+      await rename(temporaryPath, this.metadataPath);
+      return true;
     } catch {
-      return;
+      return false;
+    } finally {
+      try {
+        await rm(temporaryPath, { force: true });
+      } catch {
+        // The parent path can be temporarily unavailable. The next capture retries the save.
+      }
     }
   }
 }

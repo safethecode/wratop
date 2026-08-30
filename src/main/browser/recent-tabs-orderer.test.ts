@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -74,5 +74,24 @@ describe('RecentTabsOrderer', () => {
     const reorderedSnapshot = await restartedOrderer.order(createSnapshot(['tab-1', 'tab-2']));
 
     expect(getFirstWindowTabIds(reorderedSnapshot)).toEqual(['tab-2', 'tab-1']);
+  });
+
+  it('metadata 저장이 실패하면 다음 탭 확인에서 다시 저장한다', async () => {
+    const directoryPath = await mkdtemp(path.join(tmpdir(), 'wratop-recent-tabs-'));
+    temporaryDirectories.push(directoryPath);
+    const blockedDirectoryPath = path.join(directoryPath, 'blocked');
+    const metadataPath = path.join(blockedDirectoryPath, 'tab-recency.json');
+    await writeFile(blockedDirectoryPath, 'blocks directory creation');
+    const orderer = new RecentTabsOrderer(metadataPath, () => 1_000);
+
+    await orderer.order(createSnapshot(['tab-1']));
+    await rm(blockedDirectoryPath);
+    await mkdir(blockedDirectoryPath);
+    await orderer.order(createSnapshot(['tab-1']));
+
+    const storedMetadata = JSON.parse(await readFile(metadataPath, 'utf8')) as {
+      readonly firstSeenAtByTabId: Readonly<Record<string, number>>;
+    };
+    expect(storedMetadata.firstSeenAtByTabId['tab-1']).toBe(1_000);
   });
 });
