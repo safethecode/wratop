@@ -7,6 +7,7 @@ import { FileArchiveRepository } from './archive/archive-repository';
 import { ArchiveService } from './archive/archive-service';
 import { ChromeAppleEventsGateway } from './browser/chrome-apple-events';
 import { executeJxa } from './browser/jxa-executor';
+import { RecentTabsOrderer } from './browser/recent-tabs-orderer';
 import { registerIpcHandlers } from './ipc';
 import type { StatusBar } from './status-bar';
 import { createStatusBar } from './status-bar';
@@ -32,10 +33,14 @@ async function bootstrap(): Promise<void> {
     callback(false);
   });
 
-  const archiveDirectory = path.join(app.getPath('appData'), 'wratop', 'archives');
+  const appDataDirectory = path.join(app.getPath('appData'), 'wratop');
+  const archiveDirectory = path.join(appDataDirectory, 'archives');
   const repository = new FileArchiveRepository(archiveDirectory);
   const browserGateway = new ChromeAppleEventsGateway(executeJxa);
-  const archiveService = new ArchiveService(repository, browserGateway);
+  const recentTabsOrderer = new RecentTabsOrderer(path.join(appDataDirectory, 'tab-recency.json'));
+  const archiveService = new ArchiveService(repository, browserGateway, {
+    orderSnapshot: (snapshot) => recentTabsOrderer.order(snapshot),
+  });
 
   registerIpcHandlers(MAIN_WINDOW_WEBPACK_ENTRY, archiveService);
   showMainWindow();
