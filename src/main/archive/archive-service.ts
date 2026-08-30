@@ -14,11 +14,12 @@ import type { BrowserGateway, BrowserTabTarget } from '../browser/browser-gatewa
 import type { ArchiveRepository } from './archive-repository';
 
 interface ArchiveServiceOptions {
-  readonly createId: () => string;
-  readonly now: () => Date;
+  readonly createId?: () => string;
+  readonly now?: () => Date;
+  readonly orderSnapshot?: (snapshot: BrowserSnapshot) => Promise<BrowserSnapshot>;
 }
 
-const defaultOptions: ArchiveServiceOptions = {
+const defaultOptions: Required<Pick<ArchiveServiceOptions, 'createId' | 'now'>> = {
   createId: randomUUID,
   now: () => new Date(),
 };
@@ -37,7 +38,7 @@ export class ArchiveService {
       return this.captureInFlight;
     }
 
-    const capture = this.browserGateway.captureTabs();
+    const capture = this.captureAndOrderTabs();
     this.captureInFlight = capture;
 
     const clearCapture = (): void => {
@@ -76,10 +77,10 @@ export class ArchiveService {
       throw new Error('Selected tabs are no longer available');
     }
 
-    const createdAt = this.options.now().toISOString();
+    const createdAt = (this.options.now ?? defaultOptions.now)().toISOString();
     const archive: TabArchive = {
       createdAt,
-      id: this.options.createId(),
+      id: (this.options.createId ?? defaultOptions.createId)(),
       name: command.name.trim() || `${createdAt.slice(0, 10)} Chrome Tabs`,
       source: 'chrome',
       windows,
@@ -139,6 +140,11 @@ export class ArchiveService {
         windowId: window.id,
       })),
     );
+  }
+
+  private async captureAndOrderTabs(): Promise<BrowserSnapshot> {
+    const snapshot = await this.browserGateway.captureTabs();
+    return this.options.orderSnapshot?.(snapshot) ?? snapshot;
   }
 
   private selectWindows(

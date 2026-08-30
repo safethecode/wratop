@@ -31,6 +31,35 @@ const snapshot = {
 };
 
 describe('ArchiveService', () => {
+  it('Chrome에서 확인한 탭에 지정한 순서를 적용한다', async () => {
+    const service = new ArchiveService(
+      {
+        delete: async () => false,
+        get: async () => null,
+        list: async () => [],
+        save: async () => undefined,
+      },
+      {
+        captureTabs: async () => snapshot,
+        closeTabs: async () => ({ closedTabCount: 0, skippedTabCount: 0 }),
+        restoreWindows: async () => undefined,
+      },
+      {
+        orderSnapshot: async (capturedSnapshot) => ({
+          ...capturedSnapshot,
+          windows: capturedSnapshot.windows.map((window) => ({
+            ...window,
+            tabs: [...window.tabs].reverse(),
+          })),
+        }),
+      },
+    );
+
+    const capturedSnapshot = await service.captureTabs();
+
+    expect(capturedSnapshot.windows[0]?.tabs.map((tab) => tab.id)).toEqual(['tab-2', 'tab-1']);
+  });
+
   it('동시에 요청한 Chrome 탭 확인을 한 번만 실행한다', async () => {
     let captureCount = 0;
     let completeCapture = (_value: typeof snapshot): void => {
